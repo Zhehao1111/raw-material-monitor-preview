@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>原材料价格风险管控</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#fafafa;color:#1f2328;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+.container{max-width:1080px;margin:0 auto;padding:32px 20px 48px}
+.header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:24px;flex-wrap:wrap;gap:8px}
+.header h1{font-size:28px;font-weight:700;letter-spacing:-0.5px;color:#1f2328;display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.header .eco-badge{font-size:12px;font-weight:500;color:#6e7781;background:#f0f3f6;padding:2px 8px;border-radius:4px;letter-spacing:0.3px;position:relative;top:-1px}
+.header .subtitle{font-size:13px;color:#6e7781;margin-top:2px}
+.header .updated{font-size:12px;color:#6e7781;white-space:nowrap}
+.card{background:#fff;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);padding:20px 24px;margin-bottom:16px}
+/* Tab 导航（铝价/金价双面板切换） */
+.tab-nav{display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid #eaeef2}
+.tab-btn{padding:10px 24px;font-size:14px;font-weight:500;color:#6e7781;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;min-height:44px}
+.tab-btn.active{color:#3b82f6;border-bottom-color:#3b82f6}
+.tab-btn:hover:not(.active){color:#1f2328}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+/* 信号横幅 */
+.signal-banner{display:flex;align-items:center;gap:20px;padding:24px}
+.signal-dot{position:relative;width:40px;height:40px;border-radius:50%;flex-shrink:0;animation:signalBreathe 2.4s ease-in-out infinite}
+.signal-dot.green{background:#30a46c;box-shadow:0 0 16px rgba(48,164,108,.4)}
+.signal-dot.yellow{background:#f5a524;box-shadow:0 0 16px rgba(245,165,36,.4)}
+.signal-dot.red{background:#e5484d;box-shadow:0 0 16px rgba(229,72,77,.4)}
+.signal-dot.gray{background:#6e7781;box-shadow:0 0 16px rgba(110,119,129,.3)}
+/* 信号灯动态脉冲：两层扩散光环（background:inherit 自动跟随灯色）+ 灯体轻微呼吸 */
+.signal-dot::before,.signal-dot::after{content:'';position:absolute;inset:0;border-radius:50%;background:inherit;opacity:.55;animation:signalRipple 2.4s ease-out infinite}
+.signal-dot::after{animation-delay:1.2s}
+@keyframes signalRipple{0%{transform:scale(1);opacity:.55}100%{transform:scale(2.4);opacity:0}}
+@keyframes signalBreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@media(prefers-reduced-motion:reduce){.signal-dot,.signal-dot::before,.signal-dot::after{animation:none}}
+.signal-text .label{font-size:20px;font-weight:600}
+.signal-text .reason{font-size:13px;color:#6e7781;margin-top:2px}
+.fetch-warn{font-size:12px;color:#e5484d;margin-top:4px}
+/* 指标卡行 */
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+@media(max-width:720px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.metric-card{padding:16px 20px}
+.metric-card .metric-label{font-size:12px;color:#6e7781;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.metric-card .metric-value{font-size:24px;font-weight:700}
+.metric-card .metric-sub{font-size:12px;color:#6e7781;margin-top:2px}
+.c-green{color:#30a46c}.c-yellow{color:#f5a524}.c-red{color:#e5484d}.c-gray{color:#6e7781}
+/* 图表卡 */
+.chart-card{padding:20px 24px 16px}
+.chart-card h2{font-size:15px;font-weight:600;margin-bottom:12px}
+.range-btns{display:flex;gap:6px;margin-bottom:12px}
+.range-btn{padding:5px 14px;border:1px solid #d1d9e0;border-radius:6px;background:#f6f8fa;color:#6e7781;font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;outline:none}
+.range-btn:hover{background:#eaeef2;color:#1f2328}
+.range-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.range-select{display:none} /* 桌面端下拉框完全不渲染，仅窄屏启用 */
+/* 手机端窄屏(≤720px,与metrics断点一致)：去卡片外壳+档位下拉+触摸优化，五档切换能力不变 */
+@media(max-width:720px){
+.range-btns{display:none}
+.range-select{display:block;height:32px;font-size:13px;color:#1f2328;background:#f6f8fa;border:1px solid #d1d9e0;border-radius:6px;padding:0 8px;margin-bottom:8px;max-width:100%}
+.chart-card,.project-card{background:transparent;border-radius:0;box-shadow:none;padding:8px 0 0;margin-bottom:8px}
+.chart-wrap{touch-action:pan-y}
+.chart-wrap .tooltip{font-size:11px;padding:8px 10px} /* 特异性(0,2,0)>基线(0,1,0)，修复同块靠前被后方基线 .tooltip 覆盖的死代码问题 */
+}
+.chart-wrap{position:relative;width:100%;height:260px;cursor:crosshair;user-select:none}
+.chart-wrap svg{width:100%;height:100%}
+.tooltip{position:absolute;pointer-events:none;background:#fff;color:#1f2328;font-size:12px;padding:10px 14px;border-radius:8px;white-space:nowrap;opacity:0;transition:opacity .15s;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.12);border:1px solid #eaeef2;line-height:1.7}
+.tooltip .tt-date{font-weight:600;font-size:13px;margin-bottom:2px}
+.tooltip .tt-price{color:#1f2328}
+.tooltip .tt-change{font-size:11px}
+.tooltip .tt-up{color:#e5484d}
+.tooltip .tt-down{color:#30a46c}
+.tooltip .tt-flat{color:#6e7781}
+.drag-sel{fill:rgba(59,130,246,0.15);stroke:rgba(59,130,246,0.5);stroke-width:1;rx:2}
+.annotation-menu{position:absolute;background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);border:1px solid #eaeef2;padding:8px 0;z-index:20;min-width:180px}
+.annotation-menu .menu-item{padding:8px 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .1s}
+.annotation-menu .menu-item:hover{background:#f6f8fa}
+.annotation-menu .menu-item .mi-icon{font-size:14px}
+.annotation-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:15;display:none}
+.annotation-input{position:absolute;background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);border:1px solid #eaeef2;padding:12px 16px;z-index:20;min-width:220px}
+.annotation-input input{width:100%;padding:7px 10px;border:1px solid #d1d9e0;border-radius:6px;font-size:13px;outline:none;margin-bottom:8px}
+.annotation-input input:focus{border-color:#3b82f6}
+.annotation-input .ai-btns{display:flex;gap:6px;justify-content:flex-end}
+.annotation-input .ai-btn{padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;border:none;font-weight:500}
+.annotation-input .ai-cancel{background:#f6f8fa;color:#6e7781}
+.annotation-input .ai-cancel:hover{background:#eaeef2}
+.annotation-input .ai-confirm{background:#3b82f6;color:#fff}
+.annotation-input .ai-confirm:hover{background:#2563eb}
+/* 项目对比卡 */
+.project-card h2{font-size:15px;font-weight:600;margin-bottom:12px}
+/* 铝卡标题吸顶（id 限定仅铝卡，黄金卡同为 .project-card h2 不受波及）：祖先 .container/.project-card 均无 overflow，相对视口 sticky 成立；padding+负 margin 扩大不透明色带而不改变视觉排版；top:0 因页面无其他固定头部 */
+#projCardTitle{position:sticky;top:0;z-index:5;background:#fff;padding:10px 12px 8px;margin:-10px -12px 12px;border-bottom:1px solid #eaeef2}
+.add-row{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.add-row input[type=text]{flex:1;min-width:120px;padding:7px 10px;border:1px solid #d1d9e0;border-radius:8px;font-size:13px;outline:none;transition:border .15s}
+.add-row input[type=text]:focus{border-color:#3b82f6}
+.add-row input[type=date]{padding:7px 10px;border:1px solid #d1d9e0;border-radius:8px;font-size:13px;outline:none;transition:border .15s}
+.add-row input[type=date]:focus{border-color:#3b82f6}
+.btn-add{padding:7px 16px;background:#3b82f6;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s}
+.btn-add:hover{background:#2563eb}
+.err-msg{font-size:12px;color:#e5484d;margin-top:-8px;margin-bottom:8px;min-height:16px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{text-align:left;padding:8px 10px;border-bottom:1px solid #eaeef2;color:#6e7781;font-weight:500;font-size:12px}
+tbody td{padding:8px 10px;border-bottom:1px solid #f0f3f6}
+tbody tr:last-child td{border-bottom:none}
+.del-btn{background:none;border:none;color:#6e7781;cursor:pointer;font-size:14px;padding:2px 6px;border-radius:4px;transition:color .15s}
+.del-btn:hover{color:#e5484d}
+/* 手机端窄屏修复：指标卡等高 + 价差卡两行 + 表格横滑单行。本块必须位于 .metrics(L28)/.metric-*(L30-33)/table(L85-90) 等全部基线之后，同特异性后来者胜；表格规则另以 .project-card 前缀提特异性双保险（与 .tooltip 修复同一教训，不得塞进 L44 媒体块） */
+@media(max-width:720px){
+.metrics{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px} /* minmax(0,·) 阻止 nowrap 长文本以 min-content 撑开列宽；gap 16→12 为数值字号放大让出列宽 */
+.metric-card{min-width:0;padding:12px 10px} /* 覆盖 L30 基线 16px 20px：横向内边距 20→10，为数值字号放大让出内容区 */
+.metric-card .metric-value{font-size:16px;white-space:nowrap;letter-spacing:-0.3px} /* 数值与箭头单行；四卡结构均为 label+value(+sub) 且 sub 短不换行，行高自动一致；16px 系 16-18 区间下限：最长串 "−1905 元 (−7.9%) ↓"≈8.1em，仅价差卡经下两条 diff 规则改分两行后其余串≈5.5em 量级，13px→16px 放大不溢出 */
+.metric-diff-amt{display:block;white-space:nowrap} /* 价差卡第一行：金额（仅窄屏块级化） */
+.metric-diff-pct{display:block;white-space:nowrap} /* 价差卡第二行：百分比+箭头；不用 white-space:normal 赌自动折行，换行点由结构精确指定；桌面端两 span 默认 inline 自然单行，其余三卡无 span 不受影响 */
+.proj-table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch} /* 横滑容器从 .project-card 下沉到 table 包裹层：祖先 overflow 非 visible 会破坏 sticky（标题将相对卡片滚动容器而非视口定位），卡片恢复 visible；窄屏横滑能力不变 */
+#projCardTitle{background:#fafafa} /* 窄屏卡片透明(L54 background:transparent)，吸顶色带自取页面底色，桌面白色带被本条以同特异性后来者胜覆盖 */
+.project-card table{width:auto;min-width:100%} /* 按内容自然撑开，内容窄时仍填满容器 */
+.project-card thead th,.project-card tbody td{padding:5px 8px;font-size:12px;white-space:nowrap} /* 单元格尽量单行，行高明显降低；序号列 th/td 的内联样式仍优先，不受影响 */
+}
+/* 图表图例 */
+.chart-legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-bottom:10px;align-items:center}
+.chart-legend .legend-item{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:#1f2328;user-select:none;padding:2px 6px;border-radius:4px;transition:opacity .15s,background .15s}
+.chart-legend .legend-item:hover{background:#f0f3f6}
+.chart-legend .legend-item.hidden{opacity:0.35;text-decoration:line-through}
+.chart-legend .legend-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+/* 页脚 */
+.footer{text-align:center;font-size:12px;color:#6e7781;margin-top:24px;line-height:1.8}
+.footer .contact{font-size:11px;color:#6e7781;margin-top:6px}
+/* 金价模块施工占位 */
+.coming-soon{text-align:center;padding:56px 24px;background:linear-gradient(135deg,#fffbeb 0%,#fef3c7 60%,#fde68a 100%);border-radius:8px;border:1px dashed #d97706;margin-bottom:16px}
+.coming-soon .construction-icon{font-size:72px;line-height:1;margin-bottom:14px;display:inline-block;filter:drop-shadow(0 2px 6px rgba(180,83,9,.25));transform-origin:50% 100%;animation:csIconSway 3s ease-in-out infinite}
+.coming-soon .cs-title{font-size:20px;color:#78350f;margin:0 0 6px;padding:0;border:none;font-weight:600}
+.coming-soon .cs-desc{font-size:14px;color:#92400e;margin:0 0 22px}
+.coming-soon .cs-todo{display:inline-block;text-align:left;list-style:none;padding:16px 22px;margin:0;background:rgba(255,255,255,.65);border-radius:6px;font-size:13px;line-height:2;color:#78350f}
+.coming-soon .cs-todo li.done{color:#065f46}
+.coming-soon .cs-todo li.wip{color:#b45309;font-weight:600;animation:csWipBreathe 2.4s ease-in-out infinite}
+.coming-soon .cs-todo li.todo{color:#6b7280}
+/* 施工动效：🚧 以底部为轴 ±10° 缓速摆动；进行中任务项透明度呼吸（与信号绿灯 2.4s 节奏一致） */
+@keyframes csIconSway{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+@keyframes csWipBreathe{0%,100%{opacity:1}50%{opacity:.35}}
+@media(prefers-reduced-motion:reduce){.coming-soon .construction-icon,.coming-soon .cs-todo li.wip{animation:none}}
+@media(max-width:720px){
+  .coming-soon{padding:32px 16px}
+  .coming-soon .construction-icon{font-size:56px}
+  .coming-soon .cs-title{font-size:17px}
+  .coming-soon .cs-desc{font-size:13px;margin-bottom:16px}
+  .coming-soon .cs-todo{padding:12px 14px;font-size:12px;line-height:1.9;width:100%;box-sizing:border-box}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>原材料价格风险管控<span class="eco-badge">精品生态模块</span></h1>
+      <div class="subtitle">长江 A00 铝现货 / 上金所 AU9999 · 每日自动更新</div>
+    </div>
+    <div class="updated">更新于 2026-11-13 18:59:42</div>
+  </div>
+
+  <div class="tab-nav" id="tabNav">
+    <button class="tab-btn active" data-tab="aluminum">铝价</button>
+    <button class="tab-btn" data-tab="gold">金价</button>
+  </div>
+
+  <div class="tab-panel active" id="panelAluminum">
+  <div class="card signal-banner" id="signalBanner"></div>
+
+  <div class="metrics" id="metricsRow"></div>
+
+  <div class="card chart-card">
+    <h2>长江 A00 铝现货走势</h2>
+    <div class="range-btns" id="rangeBtns">
+      <button class="range-btn" data-range="30">30天</button>
+      <button class="range-btn" data-range="90">90天</button>
+      <button class="range-btn" data-range="half">半年</button>
+      <button class="range-btn active" data-range="year">1年</button>
+      <button class="range-btn" data-range="all">全部</button>
+    </div>
+    <select class="range-select" id="rangeSelect" aria-label="日期范围">
+      <option value="30">30天</option>
+      <option value="90">90天</option>
+      <option value="half">半年</option>
+      <option value="year" selected>1年</option>
+      <option value="all">全部</option>
+    </select>
+    <div class="chart-wrap" id="chartWrap">
+      <svg id="chartSvg" viewBox="0 0 1000 260" preserveAspectRatio="none"></svg>
+      <div class="tooltip" id="tooltip"></div>
+    </div>
+    <div id="chartLegend" class="chart-legend"></div> <!-- 图例移至图表 SVG 之后（手机端先见曲线后见图例，桌面端统一同序，仅移动 DOM 位置不增删节点） -->
+  </div>
+
+  <div class="card project-card">
+    <h2 id="projCardTitle">开标日期对比</h2> <!-- 桌面文案静态；手机端由 updateProjTitle() 按 isMobileUI() 切为"项目列表"，单元素 textContent 替换不重复进 a11y 树 -->
+    <div class="proj-table-wrap"> <!-- 专用横滑包裹层（窄屏 overflow-x:auto 在此），卡片本体保持 visible 以让 h2 sticky 生效 -->
+    <table>
+      <thead><tr><th style="min-width:56px;width:56px;text-align:center;white-space:nowrap;padding:8px 12px">序号</th><th>项目</th><th>开标日期</th><th>开标日铝价</th><th>当前铝价</th><th>价差</th></tr></thead>
+      <tbody id="projBody"></tbody>
+    </table>
+    </div>
+  </div>
+  </div><!-- /panelAluminum -->
+
+  <div class="tab-panel" id="panelGold">
+  <div class="coming-soon">
+    <div class="construction-icon" aria-hidden="true">🚧</div>
+    <h2 class="cs-title">金价监控模块正在开发中</h2>
+    <p class="cs-desc">即将上线 · 数据源已完成选型</p>
+    <ul class="cs-todo">
+      <li class="done">✓ 上金所 Au99.99 现货数据源调研</li>
+      <li class="done">✓ 抓取脚本集成与量纲自检</li>
+      <li class="done">✓ Tab 框架与前端 UI 骨架</li>
+      <li class="wip">◐ 采购阈值调优与业务规则确认</li>
+      <li class="todo">○ 项目基准日对比表配置</li>
+      <li class="todo">○ 移动端视觉打磨与上线验收</li>
+    </ul>
+  </div>
+</div><!-- /panelGold -->
+
+  <div class="footer">
+    绿灯 &lt;3% · 黄灯 3%–8% · 红灯 &gt;8% 或创3个月新高（铝价/金价同口径）<br>
+    阈值可在脚本中调整
+    <div class="contact">如有修改建议，请联系管理员丁哲颢。感谢您的宝贵意见！</div>
+  </div>
+</div>
+
+<script>
+const DATA=[{"d":"2025-11-18","c":21450},{"d":"2025-11-19","c":21540},{"d":"2025-11-20","c":21560},{"d":"2025-11-21","c":21390},{"d":"2025-11-24","c":21360},{"d":"2025-11-25","c":21430},{"d":"2025-11-26","c":21410},{"d":"2025-11-27","c":21460},{"d":"2025-11-28","c":21440},{"d":"2025-12-01","c":21730},{"d":"2025-12-02","c":21730},{"d":"2025-12-03","c":21790},{"d":"2025-12-04","c":22010},{"d":"2025-12-05","c":22080},{"d":"2025-12-08","c":21920},{"d":"2025-12-09","c":21900},{"d":"2025-12-10","c":21770},{"d":"2025-12-11","c":21880},{"d":"2025-12-12","c":22050},{"d":"2025-12-15","c":21700},{"d":"2025-12-16","c":21640},{"d":"2025-12-17","c":21750},{"d":"2025-12-18","c":21750},{"d":"2025-12-19","c":21810},{"d":"2025-12-22","c":21930},{"d":"2025-12-23","c":21890},{"d":"2025-12-24","c":22020},{"d":"2025-12-25","c":21990},{"d":"2025-12-26","c":22010},{"d":"2025-12-29","c":22470},{"d":"2025-12-30","c":22180},{"d":"2025-12-31","c":22460},{"d":"2026-01-05","c":23300},{"d":"2026-01-06","c":23890},{"d":"2026-01-07","c":24110},{"d":"2026-01-08","c":24000},{"d":"2026-01-09","c":24000},{"d":"2026-01-12","c":24340},{"d":"2026-01-13","c":24320},{"d":"2026-01-14","c":24660},{"d":"2026-01-15","c":24180},{"d":"2026-01-16","c":24010},{"d":"2026-01-19","c":23860},{"d":"2026-01-20","c":23670},{"d":"2026-01-21","c":23690},{"d":"2026-01-22","c":23750},{"d":"2026-01-23","c":24110},{"d":"2026-01-26","c":24040},{"d":"2026-01-27","c":23870},{"d":"2026-01-28","c":24250},{"d":"2026-01-29","c":24850},{"d":"2026-01-30","c":24670},{"d":"2026-02-02","c":23700},{"d":"2026-02-03","c":23300},{"d":"2026-02-04","c":23760},{"d":"2026-02-05","c":23330},{"d":"2026-02-06","c":23140},{"d":"2026-02-09","c":23390},{"d":"2026-02-10","c":23290},{"d":"2026-02-11","c":23250},{"d":"2026-02-12","c":23350},{"d":"2026-02-13","c":23160},{"d":"2026-02-24","c":23400},{"d":"2026-02-25","c":23380},{"d":"2026-02-26","c":23530},{"d":"2026-02-27","c":23400},{"d":"2026-03-02","c":23620},{"d":"2026-03-03","c":23940},{"d":"2026-03-04","c":24380},{"d":"2026-03-05","c":25100},{"d":"2026-03-06","c":24450},{"d":"2026-03-09","c":25250},{"d":"2026-03-10","c":24450},{"d":"2026-03-11","c":25020},{"d":"2026-03-12","c":25240},{"d":"2026-03-13","c":25110},{"d":"2026-03-16","c":24780},{"d":"2026-03-17","c":24900},{"d":"2026-03-18","c":24500},{"d":"2026-03-19","c":24470},{"d":"2026-03-20","c":24080},{"d":"2026-03-23","c":23440},{"d":"2026-03-24","c":23450},{"d":"2026-03-25","c":23760},{"d":"2026-03-26","c":23510},{"d":"2026-03-27","c":23820},{"d":"2026-03-30","c":24520},{"d":"2026-03-31","c":24600},{"d":"2026-04-01","c":24600},{"d":"2026-04-02","c":24620},{"d":"2026-04-03","c":24510},{"d":"2026-04-07","c":24470},{"d":"2026-04-08","c":24550},{"d":"2026-04-09","c":24410},{"d":"2026-04-10","c":24530},{"d":"2026-04-13","c":24450},{"d":"2026-04-14","c":24740},{"d":"2026-04-15","c":24740},{"d":"2026-04-16","c":25080},{"d":"2026-04-17","c":25140},{"d":"2026-04-20","c":24910},{"d":"2026-04-21","c":24660},{"d":"2026-04-22","c":24770},{"d":"2026-04-23","c":24780},{"d":"2026-04-24","c":24760},{"d":"2026-04-27","c":24800},{"d":"2026-04-28","c":24460},{"d":"2026-04-29","c":24460},{"d":"2026-04-30","c":24390},{"d":"2026-05-06","c":24520},{"d":"2026-05-07","c":24040},{"d":"2026-05-08","c":24220},{"d":"2026-05-11","c":24380},{"d":"2026-05-12","c":24380},{"d":"2026-05-13","c":24550},{"d":"2026-05-14","c":24610},{"d":"2026-05-15","c":24360},{"d":"2026-05-18","c":24050},{"d":"2026-05-19","c":24200},{"d":"2026-05-20","c":24260},{"d":"2026-05-21","c":24380},{"d":"2026-05-22","c":24350},{"d":"2026-05-25","c":24300},{"d":"2026-05-26","c":24080},{"d":"2026-05-27","c":24380},{"d":"2026-05-28","c":24140},{"d":"2026-05-29","c":24210},{"d":"2026-06-01","c":24180},{"d":"2026-06-02","c":24330},{"d":"2026-06-03","c":24450},{"d":"2026-06-04","c":24210},{"d":"2026-06-05","c":24200},{"d":"2026-06-08","c":24000},{"d":"2026-06-09","c":23900},{"d":"2026-06-10","c":23790},{"d":"2026-06-11","c":23970},{"d":"2026-06-12","c":24130},{"d":"2026-06-15","c":24130},{"d":"2026-06-16","c":23800},{"d":"2026-06-17","c":23850},{"d":"2026-06-18","c":23870},{"d":"2026-06-22","c":23870},{"d":"2026-06-23","c":23800},{"d":"2026-06-24","c":23470},{"d":"2026-06-25","c":22840},{"d":"2026-06-26","c":22870},{"d":"2026-06-29","c":22930},{"d":"2026-06-30","c":22500},{"d":"2026-07-01","c":22260},{"d":"2026-07-02","c":22530},{"d":"2026-07-03","c":22760},{"d":"2026-07-06","c":22830},{"d":"2026-07-07","c":22940},{"d":"2026-07-08","c":23030},{"d":"2026-07-09","c":22950},{"d":"2026-07-10","c":23120},{"d":"2026-07-13","c":22990},{"d":"2026-07-14","c":23260},{"d":"2026-07-15","c":23170},{"d":"2026-07-16","c":23160},{"d":"2026-07-17","c":23220},{"d":"2026-07-20","c":23190},{"d":"2026-07-21","c":23090},{"d":"2026-07-22","c":23170},{"d":"2026-07-23","c":23250},{"d":"2026-07-24","c":23190},{"d":"2026-07-27","c":23200},{"d":"2026-07-28","c":23200},{"d":"2026-07-29","c":23390},{"d":"2026-07-30","c":23630},{"d":"2026-07-31","c":23630},{"d":"2026-08-03","c":23490},{"d":"2026-08-04","c":23730},{"d":"2026-08-05","c":23690},{"d":"2026-08-06","c":23790},{"d":"2026-08-07","c":23970},{"d":"2026-08-10","c":23980},{"d":"2026-08-11","c":24100},{"d":"2026-08-12","c":24360},{"d":"2026-08-13","c":24110},{"d":"2026-08-14","c":23870},{"d":"2026-08-17","c":24080},{"d":"2026-08-18","c":23890},{"d":"2026-08-19","c":23670},{"d":"2026-08-20","c":23590},{"d":"2026-08-21","c":23670},{"d":"2026-08-24","c":23800},{"d":"2026-08-25","c":23750},{"d":"2026-08-26","c":23860},{"d":"2026-08-27","c":23920},{"d":"2026-08-28","c":23920},{"d":"2026-08-31","c":23960},{"d":"2026-09-01","c":24110},{"d":"2026-09-02","c":24080},{"d":"2026-09-03","c":24340},{"d":"2026-09-04","c":24360},{"d":"2026-09-07","c":24410},{"d":"2026-09-08","c":24450},{"d":"2026-09-09","c":24550},{"d":"2026-09-10","c":24560},{"d":"2026-09-11","c":24240},{"d":"2026-09-14","c":24080},{"d":"2026-09-15","c":24130},{"d":"2026-09-16","c":24160},{"d":"2026-09-17","c":24170},{"d":"2026-09-18","c":24370},{"d":"2026-09-21","c":24320},{"d":"2026-09-22","c":24260},{"d":"2026-09-23","c":24240},{"d":"2026-09-24","c":24240},{"d":"2026-09-28","c":24160},{"d":"2026-09-29","c":24100},{"d":"2026-09-30","c":24030},{"d":"2026-10-08","c":23760},{"d":"2026-10-09","c":23650},{"d":"2026-10-12","c":23800},{"d":"2026-10-13","c":23710},{"d":"2026-10-14","c":23640},{"d":"2026-10-15","c":23260},{"d":"2026-10-16","c":23440},{"d":"2026-10-19","c":23650},{"d":"2026-10-20","c":23520},{"d":"2026-10-21","c":23610},{"d":"2026-10-22","c":23700},{"d":"2026-10-23","c":23690},{"d":"2026-10-26","c":23960},{"d":"2026-10-27","c":23900},{"d":"2026-10-28","c":23920},{"d":"2026-10-29","c":23750},{"d":"2026-10-30","c":23770},{"d":"2026-11-02","c":23530},{"d":"2026-11-03","c":23440},{"d":"2026-11-04","c":23350},{"d":"2026-11-05","c":23370},{"d":"2026-11-06","c":23340},{"d":"2026-11-09","c":23520},{"d":"2026-11-10","c":23300},{"d":"2026-11-11","c":22700},{"d":"2026-11-12","c":23110},{"d":"2026-11-13","c":23070}];
+const SIGNAL={"lamp":"green","price":23070,"change":-0.015784982935153624,"highNew":false,"reason":"4周涨幅 -1.58%，低于 +3.00% 阈值","changeNote":"","fetchFailed":false,"updatedAt":"2026-11-13 18:59:42"};
+// ─── 金价数据嵌入（静态：deploy-al.py 每日仅重写 DATA/SIGNAL/updated 三行动态区，不触碰 GOLD_*）───
+const GOLD_DATA = [];
+const GOLD_SIGNAL = null;
+const PROJECTS=[{"name":"2026年第一批底护板集采","bidDate":"2026-01-23"},{"name":"2026年第二批底护板集采","bidDate":"2026-05-08"},{"name":"2026年第三批底护板集采","bidDate":"2026-09-15"}]; // 内置项目清单(只读)：deploy-al.py 每日仅重写 DATA/SIGNAL/updated 三行，本静态行不受影响，价差随前端运行时自动跟随最新行情
+
+// ─── 序号工具 ──────────────────────────────────────────────────────────────────────
+function circledNum(n){
+  const chars='①②③④⑤⑥⑦⑧⑨⑩⑪⑫⑬⑭⑮⑯⑰⑱⑲⑳';
+  if(n>=1&&n<=20) return chars[n-1];
+  return '('+n+')';
+}
+
+// ─── 工具 ────────────────────────────────────────────────────────────────────────
+const $=s=>document.querySelector(s);
+const lampName={green:'绿',yellow:'黄',red:'红',gray:'灰'};
+const lampClass={green:'c-green',yellow:'c-yellow',red:'c-red',gray:'c-gray'};
+
+function findPriceByDate(dateStr){
+  // 不晚于 dateStr 的最近交易日均价（长江 A00 现货口径）
+  let found=null;
+  for(let i=DATA.length-1;i>=0;i--){
+    if(DATA[i].d<=dateStr){found=DATA[i];break;}
+  }
+  return found;
+}
+
+// ─── 手机端判定（能力检测：触摸主指针 或 视口进入窄屏区间）────────────────
+const NARROW_BP=720; // 与 CSS 媒体查询断点保持一致，勿在此函数外重复硬写
+function isMobileUI(){
+  const coarse=window.matchMedia&&window.matchMedia('(pointer: coarse)').matches;
+  return coarse||window.innerWidth<=NARROW_BP;
+}
+
+// ─── 信号横幅 ────────────────────────────────────────────────────────────────────
+function renderSignal(){
+  const el=$('#signalBanner');
+  const cls=SIGNAL.lamp;
+  let warnHtml='';
+  if(SIGNAL.fetchFailed) warnHtml='<div class="fetch-warn">⚠ 本次抓取失败，数据截至 '+DATA[DATA.length-1].d+'</div>';
+  el.innerHTML=
+    '<div class="signal-dot '+cls+'"></div>'+
+    '<div class="signal-text">'+
+      '<div class="label">当前信号：'+lampName[cls]+'灯</div>'+
+      '<div class="reason">'+SIGNAL.reason+'</div>'+
+      warnHtml+
+    '</div>';
+}
+
+// ─── 指标卡 ──────────────────────────────────────────────────────────────────────
+function renderMetrics(){
+  const el=$('#metricsRow');
+  const price=SIGNAL.price;
+  const change=SIGNAL.change;
+  const projects=loadProjects();
+
+  // 最新价
+  let priceCard='<div class="card metric-card"><div class="metric-label">最新价</div><div class="metric-value">'+(price!=null?price.toLocaleString():'—')+'</div><div class="metric-sub">元/吨</div></div>';
+
+  // 4周涨幅
+  let changeHtml='—',changeCls='c-gray';
+  if(change!=null){
+    const v=(change*100).toFixed(2);
+    const sign=change>=0?'+':'';
+    if(change>0) changeCls='c-red';
+    else if(change<0) changeCls='c-green';
+    else changeCls='c-gray';
+    changeHtml=sign+v+'%';
+  }
+  let changeCard='<div class="card metric-card"><div class="metric-label">4周涨幅</div><div class="metric-value '+changeCls+'">'+changeHtml+'</div><div class="metric-sub">'+(SIGNAL.changeNote||'')+'</div></div>';
+
+  // 3个月新高
+  const highCls=SIGNAL.highNew?'c-red':'c-gray';
+  const highText=SIGNAL.highNew?'是':'否';
+  let highCard='<div class="card metric-card"><div class="metric-label">3个月新高</div><div class="metric-value '+highCls+'">'+highText+'</div><div class="metric-sub">'+(SIGNAL.highNew?'近63个交易日最高':'低于前高')+'</div></div>';
+
+  // 最近项目价差
+  let projCard='<div class="card metric-card"><div class="metric-label">较最近开标日价差</div>';
+  if(projects.length===0){
+    projCard+='<div class="metric-value c-gray">—</div><div class="metric-sub">请在下方添加项目</div>';
+  } else {
+    // 找最近开标日的项目
+    const sorted=[...projects].sort((a,b)=>b.bidDate.localeCompare(a.bidDate));
+    const latest=sorted[0];
+    const ref=findPriceByDate(latest.bidDate);
+    if(!ref){
+      projCard+='<div class="metric-value c-gray">—</div><div class="metric-sub c-red">日期超出数据范围</div>';
+    } else {
+      const diff=price-ref.c;
+      const diffPct=(diff/ref.c*100).toFixed(1);
+      const sign=diff>0?'+':'';
+      const cls=diff>0?'c-red':diff<0?'c-green':'c-gray';
+      const arrow=diff>0?' ↑':diff<0?' ↓':'';
+      projCard+='<div class="metric-value '+cls+'"><span class="metric-diff-amt">'+sign+diff+' 元</span> <span class="metric-diff-pct">('+sign+diffPct+'%)'+arrow+'</span></div>'; // 计算式一字未动；两个 span 片段由 CSS 控制窄屏 display:block 拆两行、桌面 inline 单行；两 span 间的空格文本节点保证桌面端渲染与原纯文本一致（元 (−7.9%)），手机端两 block 间纯空白被块级格式化丢弃
+    }
+  }
+  projCard+='</div>';
+
+  el.innerHTML=priceCard+changeCard+highCard+projCard;
+}
+
+// ─── 走势图 ──────────────────────────────────────────────────────────────────────
+let currentRange='year'; // 默认近一年(约243交易日)；初始化不调 updateRangeBtns，按钮组 .active 与下拉框 selected 以 HTML 静态标记同步
+let dragState=null;
+let lastChartW=null,chartResizeTimer=null; // 手机端绘图实际宽度缓存，用于 resize 重绘判定
+let hiddenProjects=new Set();
+
+function getRangeSlice(){
+  if(currentRange==='all') return DATA.slice();
+  if(currentRange==='year'){const d=DATA[DATA.length-1].d;const y=+d.slice(0,4)-1;const from=y+'-'+d.slice(5);return DATA.filter(r=>r.d>=from);}
+  if(currentRange==='half'){const d=DATA[DATA.length-1].d;let m=(+d.slice(5,7))-6;let y=+d.slice(0,4);if(m<=0){m+=12;y--;}const mm=m<10?'0'+m:''+m;const from=y+'-'+mm+'-'+d.slice(8);return DATA.filter(r=>r.d>=from);}
+  const days=parseInt(currentRange)||90;
+  return DATA.slice(-Math.min(days,DATA.length));
+}
+
+// ─── Y 轴范围与刻度：computeYAxis 为 buildChartSVG 与 bindChartEvents 的唯一来源，杜绝两处各写公式漂移（Task#14 双份 yScale 错位风险的结构性修复）
+function computeYAxis(slice,yTicksTarget){
+  const vals=slice.map(d=>d.c);
+  const minP=Math.min(...vals),maxP=Math.max(...vals);
+  const range=maxP-minP||1;
+  const padLo=range*0.05,padHi=range*0.05; // 上/下留白均按原自适应做法 5%
+  const lo=minP-padLo,hi=maxP+padHi;
+  const cand=[500,1000,2000,5000];
+  let best=cand[0],bestDiff=Infinity;
+  for(const s of cand){const seg=Math.ceil((hi-lo)/s);const diff=Math.abs(seg-yTicksTarget);if(diff<bestDiff||(diff===bestDiff&&s<best)){best=s;bestDiff=diff;}} // 取整到规整步进，选使刻度段数最接近 yTicksTarget 的步长（平局取小步长保密度，手机/桌面目标 4/5 仅刻度数浮动 ±1 内保留）
+  const yMin=Math.floor(lo/best)*best,yMax=Math.ceil(hi/best)*best,yRange=yMax-yMin||1;
+  const ticks=[];for(let v=yMin;v<=yMax+1;v+=best)ticks.push(v);
+  return {yMin,yMax,yRange,ticks};
+}
+
+function bindChartEvents(svg,tooltip,wrap,slice,PAD_L,PAD_T,PAD_R,cw,ch,W,H,yTarget){
+  const xScale=i=>PAD_L+i/(slice.length-1)*cw;
+  const _axis=computeYAxis(slice,yTarget); // 与 buildChartSVG 共享同一 computeYAxis（yTarget 由调用点以同一 isMobileUI 分支求值）：yMin/yMax/yRange 完全同源，hoverDot 必与曲线同式
+  const yScale=v=>PAD_T+(1-(v-_axis.yMin)/_axis.yRange)*ch;
+
+  function getIdx(e){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;return Math.round((mx-PAD_L)/cw*(slice.length-1));}
+
+  function showTip(e,idx){
+    if(idx<0||idx>=slice.length){tooltip.style.opacity='0';return;}
+    const d=slice[idx];
+    const gi=DATA.findIndex(p=>p.d===d.d);
+    let ca='—',cp='—',cc='tt-flat';
+    if(gi>0){const prev=DATA[gi-1].c;const diff=d.c-prev;const pv=diff/prev*100;const s=diff>0?'+':'';ca=s+diff.toFixed(0)+' 元';cp=s+pv.toFixed(2)+'%';cc=diff>0?'tt-up':diff<0?'tt-down':'tt-flat';}
+    tooltip.innerHTML='<div class="tt-date">'+d.d+'</div><div class="tt-price">均价：'+d.c.toLocaleString()+' 元/吨</div><div class="tt-change '+cc+'">日涨跌：'+ca+' | '+cp+'</div>';
+    tooltip.style.opacity='1';
+    const wr=wrap.getBoundingClientRect();let tx=e.clientX-wr.left+14,ty=e.clientY-wr.top-40;const tw=tooltip.offsetWidth,th=tooltip.offsetHeight;if(tx+tw>wr.width)tx=e.clientX-wr.left-tw-14;if(ty<0)ty=4;if(ty+th>wr.height)ty=wr.height-th-4;
+    tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';
+    const hl=svg.querySelector('#hoverLine'),hd=svg.querySelector('#hoverDot');
+    if(hl){hl.setAttribute('x1',xScale(idx));hl.setAttribute('x2',xScale(idx));hl.style.display='';}
+    if(hd){hd.setAttribute('cx',xScale(idx));hd.setAttribute('cy',yScale(d.c));hd.style.display='';}
+  }
+  function hideTip(){tooltip.style.opacity='0';const hl=svg.querySelector('#hoverLine'),hd=svg.querySelector('#hoverDot');if(hl)hl.style.display='none';if(hd)hd.style.display='none';}
+
+  svg.addEventListener('mousedown',e=>{if(e.button!==0)return;const idx=getIdx(e);if(idx<0||idx>=slice.length)return;const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;dragState={startX:mx,active:false};});
+
+  svg.addEventListener('mousemove',e=>{
+    if(dragState){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;const cx=Math.max(PAD_L,Math.min(W-PAD_R,mx));if(!dragState.active&&Math.abs(cx-dragState.startX)>5){dragState.active=true;hideTip();}if(dragState.active){const sr=svg.querySelector('#dragSelRect');const x1=Math.min(dragState.startX,cx),x2=Math.max(dragState.startX,cx);sr.setAttribute('x',x1);sr.setAttribute('width',x2-x1);sr.style.display='';}return;}
+    showTip(e,getIdx(e));
+  });
+
+  svg.addEventListener('mouseup',e=>{
+    if(dragState&&dragState.active){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;const ex=Math.max(PAD_L,Math.min(W-PAD_R,mx));const x1=Math.min(dragState.startX,ex),x2=Math.max(dragState.startX,ex);let i1=Math.round((x1-PAD_L)/cw*(slice.length-1)),i2=Math.round((x2-PAD_L)/cw*(slice.length-1));i1=Math.max(0,i1);i2=Math.min(slice.length-1,i2);if(i2-i1>=2){const sg=DATA.findIndex(p=>p.d===slice[i1].d),eg=DATA.findIndex(p=>p.d===slice[i2].d);if(sg>=0&&eg>=0){renderChartWithSlice(DATA.slice(sg,eg+1));return;}}dragState=null;const sr=svg.querySelector('#dragSelRect');if(sr)sr.style.display='none';}
+  });
+
+  svg.addEventListener('mouseleave',()=>{if(!dragState)hideTip();});
+  svg.addEventListener('dblclick',e=>{e.preventDefault();currentRange='all';updateRangeBtns('all');renderChart();});
+
+  svg.addEventListener('click',e=>{
+    if(dragState&&dragState.active){dragState=null;return;}
+    const idx=getIdx(e);if(idx<0||idx>=slice.length)return;
+    showTip(e,idx); // 只读模式：桌面/手机端统一，单击展示该日期价格提示，"设为项目开标日"标注写入链路已关闭
+  });
+}
+
+const colors=['#e5484d','#f5a524','#3b82f6','#30a46c','#8b5cf6','#ec4899'];
+function buildChartSVG(slice,projects){
+  const mobile=isMobileUI();
+  // 手机端：W 取容器实际像素宽，viewBox 随之 1:1，消除 preserveAspectRatio=none 的横向压扁（字号即真实 px）
+  // 桌面端：W=1000 与原版完全一致，渲染路径不变
+  const H=260,PAD_T=20,PAD_B=36;
+  const W=mobile?Math.max(280,Math.round($('#chartWrap').clientWidth)||1000):1000;
+  const prices=slice.map(d=>d.c);
+  const minP=Math.min(...prices),maxP=Math.max(...prices);
+  const PAD_R=mobile?10:20;
+  const PAD_L=mobile?Math.max(38,String(Math.round(maxP)).length*7+12):60; // 1:1 下按价格位数留刻度宽
+  const cw=W-PAD_L-PAD_R,ch=H-PAD_T-PAD_B;
+  if(mobile)lastChartW=W;
+  const axis=computeYAxis(slice,mobile?4:5); // 起点回退为随数据自适应（本轮明确撤销 Task#14 的 yMin=0 固定起点决定），刻度取整到规整步进
+  const xScale=i=>PAD_L+i/(slice.length-1)*cw;
+  const yMin=axis.yMin,yMax=axis.yMax,yRange=axis.yRange; // yMin=minP-5%（自适应）,yMax=maxP+5% 后均对齐步进；曲线不再贴顶
+  const yScale=v=>PAD_T+(1-(v-yMin)/yRange)*ch;
+  let linePath='M'+slice.map((d,i)=>xScale(i)+','+yScale(d.c)).join('L');
+  let areaPath=linePath+'L'+xScale(slice.length-1)+','+(PAD_T+ch)+'L'+PAD_L+','+(PAD_T+ch)+'Z';
+  const yTicks=mobile?4:5;let gridHtml=''; // 目标刻度数（手机4/桌面5）：实际段数由 computeYAxis 取整后接近该值，允许 ±1 浮动
+  for(const v of axis.ticks){const y=yScale(v);gridHtml+='<line x1="'+PAD_L+'" y1="'+y+'" x2="'+(W-PAD_R)+'" y2="'+y+'" stroke="#eaeef2" stroke-width="1"/>';gridHtml+='<text x="'+(PAD_L-8)+'" y="'+(y+4)+'" text-anchor="end" fill="#6e7781" font-size="11">'+v+'</text>';}
+  gridHtml+='<text x="'+(PAD_L-8)+'" y="13" text-anchor="end" fill="#6e7781" font-size="10">元/吨</text>'; // Y 轴单位标注（全页统一元/吨口径，不做换算）：与刻度标签同右边界，位于最顶刻度线上方留白区，两端均有；手机端 PAD_L≥38 下 10px 字≈32px 宽自 x≈6 起不裁切不重叠
+  // 手机端按可用宽度调低刻度密度（每个 MM-DD 标签留≥50真实px）；桌面端维持固定 6
+  const xTickCount=Math.min(mobile?Math.max(2,Math.floor(cw/50)+1):6,slice.length);
+  for(let i=0;i<xTickCount;i++){const idx=Math.round(i*(slice.length-1)/(xTickCount-1));const x=xScale(idx);gridHtml+='<text x="'+x+'" y="'+(H-6)+'" text-anchor="middle" fill="#6e7781" font-size="11">'+slice[idx].d.slice(5)+'</text>';}
+  let projMarks='';
+  const sorted=[...projects].sort((a,b)=>a.bidDate.localeCompare(b.bidDate));
+  // 计算每个标记的 x 坐标，用于重叠检测
+  const markInfos=[];
+  const colorMap=getProjectColorMap();
+  sorted.forEach((p,pi)=>{if(hiddenProjects.has(p.name))return;const ref=findPriceByDate(p.bidDate);if(!ref)return;let si=-1;for(let j=0;j<slice.length;j++){if(slice[j].d===ref.d){si=j;break;}}if(si<0)return;const x=xScale(si);markInfos.push({p,pi,x,si});});
+  // 错开逻辑（仅桌面端文字标签）：检测相邻标记水平距离，<60px 则交替上下偏移；手机端不生成文字也不计算偏移
+  let labelOffsets=[];
+  if(!mobile){
+    labelOffsets=markInfos.map(()=>0); // 0=正常, +14=下移
+    for(let i=1;i<markInfos.length;i++){
+      const prevX=markInfos[i-1].x;
+      const curX=markInfos[i].x;
+      if(Math.abs(curX-prevX)<60){
+        // 交替错开：如果前一个在正常位，当前在下移位
+        labelOffsets[i]=(labelOffsets[i-1]===0)?14:0;
+      }
+    }
+  }
+  markInfos.forEach((info,idx)=>{
+    const {p,pi,x}=info;
+    const col=colorMap.get(p.name)||colors[0];
+    projMarks+='<g><title>'+p.name+' ('+p.bidDate+')</title>';
+    projMarks+='<line x1="'+x+'" y1="'+PAD_T+'" x2="'+x+'" y2="'+(PAD_T+ch)+'" stroke="#6e7781" stroke-width="1" stroke-dasharray="4,3"/>';
+    if(mobile){
+      // 手机端：只用色点标识（颜色来自 getProjectColorMap，位置仍对应该交易日），名称见图例与对比表格
+      projMarks+='<circle cx="'+x+'" cy="'+(PAD_T+5)+'" r="4" fill="'+col+'" stroke="#fff" stroke-width="1.5"/></g>';
+    }else{
+      const labelY=PAD_T-4+labelOffsets[idx];
+      projMarks+='<text x="'+x+'" y="'+labelY+'" text-anchor="middle" fill="'+col+'" font-size="12" font-weight="600">'+p.name+'</text></g>';
+    }
+  });
+  const defs='<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0.01"/></linearGradient></defs>';
+  const dragRect='<rect id="dragSelRect" class="drag-sel" x="0" y="'+PAD_T+'" width="0" height="'+ch+'" style="display:none"/>';
+  const hoverLine='<line id="hoverLine" x1="0" y1="'+PAD_T+'" x2="0" y2="'+(PAD_T+ch)+'" stroke="#6e7781" stroke-width="1" stroke-dasharray="3,3" style="display:none"/>';
+  const hoverDot='<circle id="hoverDot" cx="0" cy="0" r="4" fill="#3b82f6" stroke="#fff" stroke-width="2" style="display:none"/>';
+  let hotspots='';slice.forEach((d,i)=>{const x=xScale(i);const w=cw/slice.length;hotspots+='<rect x="'+(x-w/2)+'" y="'+PAD_T+'" width="'+w+'" height="'+ch+'" fill="transparent" data-idx="'+i+'"/>';});
+  const svgEl=$('#chartSvg');
+  svgEl.setAttribute('viewBox','0 0 '+W+' '+H); // 手机端 1:1；桌面端与 HTML 初始属性 0 0 1000 260 相同
+  svgEl.innerHTML=defs+gridHtml+'<path d="'+areaPath+'" fill="url(#areaGrad)"/><path d="'+linePath+'" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>'+projMarks+hoverLine+hoverDot+dragRect+hotspots;
+  return {W,H,PAD_L,PAD_R,PAD_T,cw,ch,xScale,yScale};
+}
+
+function renderChart(){
+  const svg=$('#chartSvg');const tooltip=$('#tooltip');const wrap=$('#chartWrap');
+  const projects=loadProjects();const slice=getRangeSlice();
+  if(slice.length<2){svg.innerHTML='<text x="500" y="130" text-anchor="middle" fill="#6e7781" font-size="13">数据不足</text>';return;}
+  const dim=buildChartSVG(slice,projects);
+  bindChartEvents(svg,tooltip,wrap,slice,dim.PAD_L,dim.PAD_T,dim.PAD_R,dim.cw,dim.ch,dim.W,dim.H,isMobileUI()?4:5); // yTarget 与 buildChartSVG 内 mobile?4:5 同一判定同源
+}
+
+function renderChartWithSlice(zoomSlice){
+  const svg=$('#chartSvg');const tooltip=$('#tooltip');const wrap=$('#chartWrap');
+  const projects=loadProjects();const slice=zoomSlice;
+  if(slice.length<2)return;
+  const dim=buildChartSVG(slice,projects);
+  bindChartEvents(svg,tooltip,wrap,slice,dim.PAD_L,dim.PAD_T,dim.PAD_R,dim.cw,dim.ch,dim.W,dim.H,isMobileUI()?4:5); // 拖拽缩放路径同样传参，保持同源
+}
+
+// 手机端：窗口尺寸变化/旋转后用新宽度重绘（防抖 150ms，变化>8px 才重绘）；桌面端 W 恒为 1000 不触发
+window.addEventListener('resize',()=>{
+  updateProjTitle(); // 复用本既有监听（不新造 resize 堆）同步标题：必须在手机端早退之前，否则从窄屏跨回桌面时文案不会还原
+  if(!isMobileUI())return;
+  clearTimeout(chartResizeTimer);
+  chartResizeTimer=setTimeout(()=>{
+    const w=Math.max(280,Math.round($('#chartWrap').clientWidth)||1000);
+    if(lastChartW!=null&&Math.abs(w-lastChartW)>8)renderChart();
+  },150);
+});
+
+function updateRangeBtns(range){const r=String(range);document.querySelectorAll('#rangeBtns .range-btn').forEach(b=>{b.classList.toggle('active',b.dataset.range===r);});const sel=$('#rangeSelect');if(sel&&sel.querySelector('option[value="'+r+'"]'))sel.value=r;} // 单一同步入口：所有 currentRange 变化路径经此同时刷新按钮组与下拉框
+
+$('#rangeBtns').addEventListener('click',e=>{const btn=e.target.closest('.range-btn');if(!btn)return;currentRange=btn.dataset.range;updateRangeBtns(currentRange);renderChart();});
+$('#rangeSelect').addEventListener('change',e=>{currentRange=e.target.value;updateRangeBtns(currentRange);renderChart();});
+
+// ─── 项目表格 ────────────────────────────────────────────────────────────────────
+function loadProjects(){return PROJECTS.map(p=>({...p}));} // 内置清单返回副本，防调用方就地修改污染常量；不再读写 localStorage('alProjects')，本机旧数据保留但不参与显示
+// 统一颜色映射：按开标日期从早到晚分配，图表/表格/图例共用
+function getProjectColorMap(){
+  const projects=loadProjects();
+  const sorted=[...projects].sort((a,b)=>a.bidDate.localeCompare(b.bidDate));
+  const map=new Map();
+  sorted.forEach((p,i)=>map.set(p.name,colors[i%colors.length]));
+  return map;
+}
+
+function renderProjects(){
+  const tbody=$('#projBody');
+  const projects=loadProjects();
+  const price=SIGNAL.price;
+
+  // 按开标日期从晚到早排序（最新的在最上面），序号按此顺序分配
+  const rows=projects.map(p=>{
+    const ref=findPriceByDate(p.bidDate);
+    let diff=null,diffPct=null,outOfRange=false;
+    if(!ref){outOfRange=true;}
+    else{diff=price-ref.c;diffPct=diff/ref.c*100;}
+    return{...p,ref,diff,diffPct,outOfRange};
+  }).sort((a,b)=>b.bidDate.localeCompare(a.bidDate));
+
+  if(rows.length===0){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#6e7781;padding:20px">暂无项目，请在上方添加</td></tr>';
+    return;
+  }
+
+  const colorMap=getProjectColorMap();
+  tbody.innerHTML=rows.map((r,i)=>{
+    const projCol=colorMap.get(r.name)||colors[0];
+    let priceStr, diffStr; // hintStr 及其正负文案分支已整行删除：该计算仅服务于 hint 行、无其他引用；六列数据行取值与计算逻辑(findPriceByDate/价差/正负号/箭头)一字未动
+    if(r.outOfRange){
+      priceStr='<span style="color:#e5484d">—</span>';
+      diffStr='—';
+    } else {
+      priceStr=r.ref.c.toLocaleString();
+      const sign=r.diff>0?'+':'';
+      const cls=r.diff>0?'c-red':r.diff<0?'c-green':'c-gray';
+      const arrow=r.diff>0?' ↑':r.diff<0?' ↓':'';
+      diffStr='<span class="'+cls+'">'+sign+r.diff.toFixed(0)+' 元 ('+sign+r.diffPct.toFixed(1)+'%)'+arrow+'</span>';
+    }
+    const seqIdx=i+1;
+    return '<tr>'+
+      '<td style="color:'+projCol+';text-align:center;white-space:nowrap;padding:8px 12px">'+seqIdx+'</td>'+
+      '<td>'+r.name+'</td>'+
+      '<td>'+r.bidDate+'</td>'+
+      '<td>'+priceStr+'</td>'+
+      '<td>'+(price!=null?price.toLocaleString():'—')+'</td>'+
+      '<td>'+diffStr+'</td>'+
+      '</tr>'; // hint 行（<tr><td colspan="5">…）渲染输出整行删除，每个项目仅剩一行数据，不留空行占位
+  }).join('');
+}
+
+// ─── 铝卡标题手机端文案：选 JS 而非 CSS 双元素/伪元素，因 isMobileUI() 含 pointer:coarse 能力检测，CSS 媒体查询(≤720px)无法覆盖该分支；且单元素 textContent 替换不会两份文本重复进 a11y 树 ───
+function updateProjTitle(){const el=$('#projCardTitle');if(el)el.textContent=isMobileUI()?'项目列表':'开标日期对比';}
+
+function renderLegend(){
+  const el=$('#chartLegend');
+  const projects=loadProjects();
+  if(projects.length===0){el.innerHTML='';return;}
+  const colorMap=getProjectColorMap();
+  el.innerHTML=projects.map((p)=>{
+    const col=colorMap.get(p.name)||colors[0];
+    const cls=hiddenProjects.has(p.name)?'legend-item hidden':'legend-item';
+    return '<div class="'+cls+'" data-proj="'+p.name+'"><span class="legend-swatch" style="background:'+col+'"></span>'+p.name+'</div>';
+  }).join('');
+  el.querySelectorAll('.legend-item').forEach(item=>{
+    item.addEventListener('click',()=>{
+      const name=item.dataset.proj;
+      if(hiddenProjects.has(name)) hiddenProjects.delete(name);
+      else hiddenProjects.add(name);
+      renderLegend();
+      renderChart();
+    });
+  });
+}
+
+function renderAll(){
+  renderSignal();
+  renderMetrics();
+  renderLegend();
+  renderChart();
+  renderProjects();
+}
+
+
+// ═══ 金价面板（AU9999 上金所现货）：逻辑模式复用铝价，独立元素 id 与 GOLD_DATA 数据源，主色 #f5a524 琥珀 ═══
+let goldCurrentRange='year'; // 初始化不调 updateGoldRangeBtns，按钮组 .active 与下拉框 selected 以 HTML 静态标记同步
+let goldRendered=false;      // 首次切到金价 Tab 时才渲染（隐藏面板 clientWidth=0，手机端 1:1 宽度测量须在可见后）
+let goldLastChartW=null;
+let goldResizeTimer=null;    // 金价 resize 防抖计时器（拖拽缩放状态统一走铝价的共享 dragState，两面板从不同时可见，互不冲突）
+
+// ─── 金价信号横幅 ───
+function renderGoldSignal(){
+  const el=$('#goldSignalBanner');
+  const cls=GOLD_SIGNAL.lamp;
+  let warnHtml='';
+  if(GOLD_SIGNAL.fetchFailed) warnHtml='<div class="fetch-warn">⚠ 本次抓取失败，数据截至 '+GOLD_DATA[GOLD_DATA.length-1].d+'</div>';
+  el.innerHTML=
+    '<div class="signal-dot '+cls+'"></div>'+
+    '<div class="signal-text">'+
+      '<div class="label">当前信号：'+lampName[cls]+'灯</div>'+
+      '<div class="reason">'+GOLD_SIGNAL.reason+'</div>'+
+      warnHtml+
+    '</div>';
+}
+
+// ─── 金价指标卡（最新价 / 4周涨幅 / 3个月新高 / 较最近采购日价差暂待配置）───
+function renderGoldMetrics(){
+  const el=$('#goldMetricsRow');
+  const price=GOLD_SIGNAL.price;
+  const change=GOLD_SIGNAL.change;
+  let priceCard='<div class="card metric-card"><div class="metric-label">最新价</div><div class="metric-value">'+(price!=null?price.toLocaleString():'—')+'</div><div class="metric-sub">元/克</div></div>';
+  let changeHtml='—',changeCls='c-gray';
+  if(change!=null){
+    const v=(change*100).toFixed(2);
+    const sign=change>=0?'+':'';
+    if(change>0) changeCls='c-red';
+    else if(change<0) changeCls='c-green';
+    else changeCls='c-gray';
+    changeHtml=sign+v+'%';
+  }
+  let changeCard='<div class="card metric-card"><div class="metric-label">4周涨幅</div><div class="metric-value '+changeCls+'">'+changeHtml+'</div><div class="metric-sub">'+(GOLD_SIGNAL.changeNote||'')+'</div></div>';
+  const highCls=GOLD_SIGNAL.highNew?'c-red':'c-gray';
+  const highText=GOLD_SIGNAL.highNew?'是':'否';
+  let highCard='<div class="card metric-card"><div class="metric-label">3个月新高</div><div class="metric-value '+highCls+'">'+highText+'</div><div class="metric-sub">'+(GOLD_SIGNAL.highNew?'近63个交易日最高':'低于前高')+'</div></div>';
+  let projCard='<div class="card metric-card"><div class="metric-label">较最近采购日价差</div><div class="metric-value c-gray">—</div><div class="metric-sub">待配置</div></div>';
+  el.innerHTML=priceCard+changeCard+highCard+projCard;
+}
+
+// ─── 金价取区间 / Y 轴：与铝价同法；步进候选改小档位，适配金价 4 位数以下的刻度规整 ───
+function getGoldRangeSlice(){
+  if(goldCurrentRange==='all') return GOLD_DATA.slice();
+  if(goldCurrentRange==='year'){const d=GOLD_DATA[GOLD_DATA.length-1].d;const y=+d.slice(0,4)-1;const from=y+'-'+d.slice(5);return GOLD_DATA.filter(r=>r.d>=from);}
+  if(goldCurrentRange==='half'){const d=GOLD_DATA[GOLD_DATA.length-1].d;let m=(+d.slice(5,7))-6;let y=+d.slice(0,4);if(m<=0){m+=12;y--;}const mm=m<10?'0'+m:''+m;const from=y+'-'+mm+'-'+d.slice(8);return GOLD_DATA.filter(r=>r.d>=from);}
+  const days=parseInt(goldCurrentRange)||90;
+  return GOLD_DATA.slice(-Math.min(days,GOLD_DATA.length));
+}
+
+function computeGoldYAxis(slice,yTicksTarget){
+  const vals=slice.map(d=>d.c);
+  const minP=Math.min(...vals),maxP=Math.max(...vals);
+  const range=maxP-minP||1;
+  const padLo=range*0.05,padHi=range*0.05;
+  const lo=minP-padLo,hi=maxP+padHi;
+  const cand=[10,20,50,100,200];
+  let best=cand[0],bestDiff=Infinity;
+  for(const s of cand){const seg=Math.ceil((hi-lo)/s);const diff=Math.abs(seg-yTicksTarget);if(diff<bestDiff||(diff===bestDiff&&s<best)){best=s;bestDiff=diff;}}
+  const yMin=Math.floor(lo/best)*best,yMax=Math.ceil(hi/best)*best,yRange=yMax-yMin||1;
+  const ticks=[];for(let v=yMin;v<=yMax+1;v+=best)ticks.push(v);
+  return {yMin,yMax,yRange,ticks};
+}
+
+// ─── 金价图表事件：与铝价 bindChartEvents 同构；查找/切片数据源换 GOLD_DATA，只读提示无项目标注 ───
+function bindGoldChartEvents(svg,tooltip,wrap,slice,PAD_L,PAD_T,PAD_R,cw,ch,W,H,yTarget){
+  const xScale=i=>PAD_L+i/(slice.length-1)*cw;
+  const _axis=computeGoldYAxis(slice,yTarget);
+  const yScale=v=>PAD_T+(1-(v-_axis.yMin)/_axis.yRange)*ch;
+  function getIdx(e){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;return Math.round((mx-PAD_L)/cw*(slice.length-1));}
+  function showTip(e,idx){
+    if(idx<0||idx>=slice.length){tooltip.style.opacity='0';return;}
+    const d=slice[idx];
+    const gi=GOLD_DATA.findIndex(p=>p.d===d.d);
+    let ca='—',cp='—',cc='tt-flat';
+    if(gi>0){const prev=GOLD_DATA[gi-1].c;const diff=d.c-prev;const pv=diff/prev*100;const s=diff>0?'+':'';ca=s+diff.toFixed(2)+' 元';cp=s+pv.toFixed(2)+'%';cc=diff>0?'tt-up':diff<0?'tt-down':'tt-flat';}
+    tooltip.innerHTML='<div class="tt-date">'+d.d+'</div><div class="tt-price">收盘价：'+d.c.toLocaleString()+' 元/克</div><div class="tt-change '+cc+'">日涨跌：'+ca+' | '+cp+'</div>';
+    tooltip.style.opacity='1';
+    const wr=wrap.getBoundingClientRect();let tx=e.clientX-wr.left+14,ty=e.clientY-wr.top-40;const tw=tooltip.offsetWidth,th=tooltip.offsetHeight;if(tx+tw>wr.width)tx=e.clientX-wr.left-tw-14;if(ty<0)ty=4;if(ty+th>wr.height)ty=wr.height-th-4;
+    tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';
+    const hl=svg.querySelector('#hoverLine'),hd=svg.querySelector('#hoverDot');
+    if(hl){hl.setAttribute('x1',xScale(idx));hl.setAttribute('x2',xScale(idx));hl.style.display='';}
+    if(hd){hd.setAttribute('cx',xScale(idx));hd.setAttribute('cy',yScale(d.c));hd.style.display='';}
+  }
+  function hideTip(){tooltip.style.opacity='0';const hl=svg.querySelector('#hoverLine'),hd=svg.querySelector('#hoverDot');if(hl)hl.style.display='none';if(hd)hd.style.display='none';}
+  svg.addEventListener('mousedown',e=>{if(e.button!==0)return;const idx=getIdx(e);if(idx<0||idx>=slice.length)return;const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;dragState={startX:mx,active:false};});
+  svg.addEventListener('mousemove',e=>{
+    if(dragState){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;const cx=Math.max(PAD_L,Math.min(W-PAD_R,mx));if(!dragState.active&&Math.abs(cx-dragState.startX)>5){dragState.active=true;hideTip();}if(dragState.active){const sr=svg.querySelector('#dragSelRect');const x1=Math.min(dragState.startX,cx),x2=Math.max(dragState.startX,cx);sr.setAttribute('x',x1);sr.setAttribute('width',x2-x1);sr.style.display='';}return;}
+    showTip(e,getIdx(e));
+  });
+  svg.addEventListener('mouseup',e=>{
+    if(dragState&&dragState.active){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;const ex=Math.max(PAD_L,Math.min(W-PAD_R,mx));const x1=Math.min(dragState.startX,ex),x2=Math.max(dragState.startX,ex);let i1=Math.round((x1-PAD_L)/cw*(slice.length-1)),i2=Math.round((x2-PAD_L)/cw*(slice.length-1));i1=Math.max(0,i1);i2=Math.min(slice.length-1,i2);if(i2-i1>=2){const sg=GOLD_DATA.findIndex(p=>p.d===slice[i1].d),eg=GOLD_DATA.findIndex(p=>p.d===slice[i2].d);if(sg>=0&&eg>=0){renderGoldChartWithSlice(GOLD_DATA.slice(sg,eg+1));return;}}dragState=null;const sr=svg.querySelector('#dragSelRect');if(sr)sr.style.display='none';}
+  });
+  svg.addEventListener('mouseleave',()=>{if(!dragState)hideTip();});
+  svg.addEventListener('dblclick',e=>{e.preventDefault();goldCurrentRange='all';updateGoldRangeBtns('all');renderGoldChart();});
+  svg.addEventListener('click',e=>{
+    if(dragState&&dragState.active){dragState=null;return;}
+    const idx=getIdx(e);if(idx<0||idx>=slice.length)return;
+    showTip(e,idx); // 只读模式：与铝价口径一致
+  });
+}
+
+// ─── 金价图表构建：无项目标记/图例（金价项目表暂空），其余结构与铝价一致；线色/hoverDot/areaGrad 用 #f5a524 ───
+function buildGoldChartSVG(slice){
+  const mobile=isMobileUI();
+  const H=260,PAD_T=20,PAD_B=36;
+  const W=mobile?Math.max(280,Math.round($('#goldChartWrap').clientWidth)||1000):1000;
+  const prices=slice.map(d=>d.c);
+  const maxP=Math.max(...prices);
+  const PAD_R=mobile?10:20;
+  const PAD_L=mobile?Math.max(38,String(Math.round(maxP)).length*7+12):60;
+  const cw=W-PAD_L-PAD_R,ch=H-PAD_T-PAD_B;
+  if(mobile)goldLastChartW=W;
+  const axis=computeGoldYAxis(slice,mobile?4:5);
+  const xScale=i=>PAD_L+i/(slice.length-1)*cw;
+  const yMin=axis.yMin,yMax=axis.yMax,yRange=axis.yRange;
+  const yScale=v=>PAD_T+(1-(v-yMin)/yRange)*ch;
+  let linePath='M'+slice.map((d,i)=>xScale(i)+','+yScale(d.c)).join('L');
+  let areaPath=linePath+'L'+xScale(slice.length-1)+','+(PAD_T+ch)+'L'+PAD_L+','+(PAD_T+ch)+'Z';
+  let gridHtml='';
+  for(const v of axis.ticks){const y=yScale(v);gridHtml+='<line x1="'+PAD_L+'" y1="'+y+'" x2="'+(W-PAD_R)+'" y2="'+y+'" stroke="#eaeef2" stroke-width="1"/>';gridHtml+='<text x="'+(PAD_L-8)+'" y="'+(y+4)+'" text-anchor="end" fill="#6e7781" font-size="11">'+v+'</text>';}
+  gridHtml+='<text x="'+(PAD_L-8)+'" y="13" text-anchor="end" fill="#6e7781" font-size="10">元/克</text>'; // Y 轴单位标注：金价口径元/克
+  const xTickCount=Math.min(mobile?Math.max(2,Math.floor(cw/50)+1):6,slice.length);
+  for(let i=0;i<xTickCount;i++){const idx=Math.round(i*(slice.length-1)/(xTickCount-1));const x=xScale(idx);gridHtml+='<text x="'+x+'" y="'+(H-6)+'" text-anchor="middle" fill="#6e7781" font-size="11">'+slice[idx].d.slice(5)+'</text>';}
+  const defs='<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f5a524" stop-opacity="0.15"/><stop offset="100%" stop-color="#f5a524" stop-opacity="0.01"/></linearGradient></defs>';
+  const dragRect='<rect id="dragSelRect" class="drag-sel" x="0" y="'+PAD_T+'" width="0" height="'+ch+'" style="display:none"/>';
+  const hoverLine='<line id="hoverLine" x1="0" y1="'+PAD_T+'" x2="0" y2="'+(PAD_T+ch)+'" stroke="#6e7781" stroke-width="1" stroke-dasharray="3,3" style="display:none"/>';
+  const hoverDot='<circle id="hoverDot" cx="0" cy="0" r="4" fill="#f5a524" stroke="#fff" stroke-width="2" style="display:none"/>';
+  let hotspots='';slice.forEach((d,i)=>{const x=xScale(i);const w=cw/slice.length;hotspots+='<rect x="'+(x-w/2)+'" y="'+PAD_T+'" width="'+w+'" height="'+ch+'" fill="transparent" data-idx="'+i+'"/>';});
+  const svgEl=$('#goldChartSvg');
+  svgEl.setAttribute('viewBox','0 0 '+W+' '+H);
+  svgEl.innerHTML=defs+gridHtml+'<path d="'+areaPath+'" fill="url(#areaGrad)"/><path d="'+linePath+'" fill="none" stroke="#f5a524" stroke-width="2" stroke-linejoin="round"/>'+hoverLine+hoverDot+dragRect+hotspots;
+  return {W,H,PAD_L,PAD_R,PAD_T,cw,ch,xScale,yScale};
+}
+
+function renderGoldChart(){
+  const svg=$('#goldChartSvg');const tooltip=$('#goldTooltip');const wrap=$('#goldChartWrap');
+  const slice=getGoldRangeSlice();
+  if(slice.length<2){svg.innerHTML='<text x="500" y="130" text-anchor="middle" fill="#6e7781" font-size="13">数据不足</text>';return;}
+  const dim=buildGoldChartSVG(slice);
+  bindGoldChartEvents(svg,tooltip,wrap,slice,dim.PAD_L,dim.PAD_T,dim.PAD_R,dim.cw,dim.ch,dim.W,dim.H,isMobileUI()?4:5);
+}
+
+function renderGoldChartWithSlice(zoomSlice){
+  const svg=$('#goldChartSvg');const tooltip=$('#goldTooltip');const wrap=$('#goldChartWrap');
+  const slice=zoomSlice;
+  if(slice.length<2)return;
+  const dim=buildGoldChartSVG(slice);
+  bindGoldChartEvents(svg,tooltip,wrap,slice,dim.PAD_L,dim.PAD_T,dim.PAD_R,dim.cw,dim.ch,dim.W,dim.H,isMobileUI()?4:5);
+}
+
+
+function updateGoldRangeBtns(range){const r=String(range);document.querySelectorAll('#goldRangeBtns .range-btn').forEach(b=>{b.classList.toggle('active',b.dataset.range===r);});const sel=$('#goldRangeSelect');if(sel&&sel.querySelector('option[value="'+r+'"]'))sel.value=r;} // 作用域限定金价按钮组，避免与铝价 .range-btn 全局选择器互相串扰
+
+  /* gold panel placeholder - binding removed */
+  /* gold panel placeholder - binding removed */
+
+// 金价 Tab 激活后 resize 重绘（手机端 1:1 宽度防抖判定，与铝价同法；隐藏态 clientWidth=0 不参与比对）
+window.addEventListener('resize',()=>{
+  if(!isMobileUI()||!goldRendered)return;
+  clearTimeout(goldResizeTimer);
+  goldResizeTimer=setTimeout(()=>{
+    const w=Math.max(280,Math.round($('#goldChartWrap').clientWidth)||1000);
+    if(goldLastChartW!=null&&Math.abs(w-goldLastChartW)>8)renderGoldChart();
+  },150);
+});
+
+// ─── Tab 切换：铝价已随首屏渲染；金价首次激活时惰性渲染（确保面板可见后测量真实宽度）───
+$('#tabNav').addEventListener('click',e=>{
+  const btn=e.target.closest('.tab-btn');if(!btn)return;
+  const tab=btn.dataset.tab;if(btn.classList.contains('active'))return;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b===btn));
+  $('#panelAluminum').classList.toggle('active',tab==='aluminum');
+  $('#panelGold').classList.toggle('active',tab==='gold');
+  /* gold panel placeholder - render skipped */
+});
+
+
+// 初始化
+renderAll();
+updateProjTitle(); // 首帧前同步执行（脚本位于 body 末尾），手机端初始即为"项目列表"，无旧文案闪现
+</script>
+</body>
+</html>

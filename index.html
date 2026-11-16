@@ -61,7 +61,7 @@ body{background:#fafafa;color:#1f2328;font-family:system-ui,-apple-system,"Segoe
 .chart-wrap{touch-action:pan-y}
 .chart-wrap .tooltip{font-size:11px;padding:8px 10px} /* 特异性(0,2,0)>基线(0,1,0)，修复同块靠前被后方基线 .tooltip 覆盖的死代码问题 */
 }
-.chart-wrap{position:relative;width:100%;height:260px;cursor:crosshair;user-select:none}
+.chart-wrap{position:relative;width:100%;height:260px;cursor:pointer;user-select:none;-webkit-tap-highlight-color:transparent}
 .chart-wrap svg{width:100%;height:100%}
 .tooltip{position:absolute;pointer-events:none;background:#fff;color:#1f2328;font-size:12px;padding:10px 14px;border-radius:8px;white-space:nowrap;opacity:0;transition:opacity .15s;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.12);border:1px solid #eaeef2;line-height:1.7}
 .tooltip .tt-date{font-weight:600;font-size:13px;margin-bottom:2px}
@@ -70,7 +70,7 @@ body{background:#fafafa;color:#1f2328;font-family:system-ui,-apple-system,"Segoe
 .tooltip .tt-up{color:#e5484d}
 .tooltip .tt-down{color:#30a46c}
 .tooltip .tt-flat{color:#6e7781}
-.drag-sel{fill:rgba(59,130,246,0.15);stroke:rgba(59,130,246,0.5);stroke-width:1;rx:2}
+.tooltip.pinned{box-shadow:0 6px 22px rgba(0,0,0,.18);border-color:#d0d7de}
 .annotation-menu{position:absolute;background:#fff;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.15);border:1px solid #eaeef2;padding:8px 0;z-index:20;min-width:180px}
 .annotation-menu .menu-item{padding:8px 16px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .1s}
 .annotation-menu .menu-item:hover{background:#f6f8fa}
@@ -153,7 +153,7 @@ tbody tr:last-child td{border-bottom:none}
       <h1>原材料价格风险管控<span class="eco-badge">精品生态模块</span></h1>
       <div class="subtitle">长江 A00 铝现货 / 上金所 AU9999 · 每日自动更新</div>
     </div>
-    <div class="updated">更新于 2026-11-16 09:20:12</div>
+    <div class="updated">更新于 2026-11-16 14:57:44</div>
   </div>
 
   <div class="tab-nav" id="tabNav">
@@ -224,8 +224,8 @@ tbody tr:last-child td{border-bottom:none}
 </div>
 
 <script>
-const DATA=[{"d":"2025-11-18","c":21450},{"d":"2025-11-19","c":21540},{"d":"2025-11-20","c":21560},{"d":"2025-11-21","c":21390},{"d":"2025-11-24","c":21360},{"d":"2025-11-25","c":21430},{"d":"2025-11-26","c":21410},{"d":"2025-11-27","c":21460},{"d":"2025-11-28","c":21440},{"d":"2025-12-01","c":21730},{"d":"2025-12-02","c":21730},{"d":"2025-12-03","c":21790},{"d":"2025-12-04","c":22010},{"d":"2025-12-05","c":22080},{"d":"2025-12-08","c":21920},{"d":"2025-12-09","c":21900},{"d":"2025-12-10","c":21770},{"d":"2025-12-11","c":21880},{"d":"2025-12-12","c":22050},{"d":"2025-12-15","c":21700},{"d":"2025-12-16","c":21640},{"d":"2025-12-17","c":21750},{"d":"2025-12-18","c":21750},{"d":"2025-12-19","c":21810},{"d":"2025-12-22","c":21930},{"d":"2025-12-23","c":21890},{"d":"2025-12-24","c":22020},{"d":"2025-12-25","c":21990},{"d":"2025-12-26","c":22010},{"d":"2025-12-29","c":22470},{"d":"2025-12-30","c":22180},{"d":"2025-12-31","c":22460},{"d":"2026-01-05","c":23300},{"d":"2026-01-06","c":23890},{"d":"2026-01-07","c":24110},{"d":"2026-01-08","c":24000},{"d":"2026-01-09","c":24000},{"d":"2026-01-12","c":24340},{"d":"2026-01-13","c":24320},{"d":"2026-01-14","c":24660},{"d":"2026-01-15","c":24180},{"d":"2026-01-16","c":24010},{"d":"2026-01-19","c":23860},{"d":"2026-01-20","c":23670},{"d":"2026-01-21","c":23690},{"d":"2026-01-22","c":23750},{"d":"2026-01-23","c":24110},{"d":"2026-01-26","c":24040},{"d":"2026-01-27","c":23870},{"d":"2026-01-28","c":24250},{"d":"2026-01-29","c":24850},{"d":"2026-01-30","c":24670},{"d":"2026-02-02","c":23700},{"d":"2026-02-03","c":23300},{"d":"2026-02-04","c":23760},{"d":"2026-02-05","c":23330},{"d":"2026-02-06","c":23140},{"d":"2026-02-09","c":23390},{"d":"2026-02-10","c":23290},{"d":"2026-02-11","c":23250},{"d":"2026-02-12","c":23350},{"d":"2026-02-13","c":23160},{"d":"2026-02-24","c":23400},{"d":"2026-02-25","c":23380},{"d":"2026-02-26","c":23530},{"d":"2026-02-27","c":23400},{"d":"2026-03-02","c":23620},{"d":"2026-03-03","c":23940},{"d":"2026-03-04","c":24380},{"d":"2026-03-05","c":25100},{"d":"2026-03-06","c":24450},{"d":"2026-03-09","c":25250},{"d":"2026-03-10","c":24450},{"d":"2026-03-11","c":25020},{"d":"2026-03-12","c":25240},{"d":"2026-03-13","c":25110},{"d":"2026-03-16","c":24780},{"d":"2026-03-17","c":24900},{"d":"2026-03-18","c":24500},{"d":"2026-03-19","c":24470},{"d":"2026-03-20","c":24080},{"d":"2026-03-23","c":23440},{"d":"2026-03-24","c":23450},{"d":"2026-03-25","c":23760},{"d":"2026-03-26","c":23510},{"d":"2026-03-27","c":23820},{"d":"2026-03-30","c":24520},{"d":"2026-03-31","c":24600},{"d":"2026-04-01","c":24600},{"d":"2026-04-02","c":24620},{"d":"2026-04-03","c":24510},{"d":"2026-04-07","c":24470},{"d":"2026-04-08","c":24550},{"d":"2026-04-09","c":24410},{"d":"2026-04-10","c":24530},{"d":"2026-04-13","c":24450},{"d":"2026-04-14","c":24740},{"d":"2026-04-15","c":24740},{"d":"2026-04-16","c":25080},{"d":"2026-04-17","c":25140},{"d":"2026-04-20","c":24910},{"d":"2026-04-21","c":24660},{"d":"2026-04-22","c":24770},{"d":"2026-04-23","c":24780},{"d":"2026-04-24","c":24760},{"d":"2026-04-27","c":24800},{"d":"2026-04-28","c":24460},{"d":"2026-04-29","c":24460},{"d":"2026-04-30","c":24390},{"d":"2026-05-06","c":24520},{"d":"2026-05-07","c":24040},{"d":"2026-05-08","c":24220},{"d":"2026-05-11","c":24380},{"d":"2026-05-12","c":24380},{"d":"2026-05-13","c":24550},{"d":"2026-05-14","c":24610},{"d":"2026-05-15","c":24360},{"d":"2026-05-18","c":24050},{"d":"2026-05-19","c":24200},{"d":"2026-05-20","c":24260},{"d":"2026-05-21","c":24380},{"d":"2026-05-22","c":24350},{"d":"2026-05-25","c":24300},{"d":"2026-05-26","c":24080},{"d":"2026-05-27","c":24380},{"d":"2026-05-28","c":24140},{"d":"2026-05-29","c":24210},{"d":"2026-06-01","c":24180},{"d":"2026-06-02","c":24330},{"d":"2026-06-03","c":24450},{"d":"2026-06-04","c":24210},{"d":"2026-06-05","c":24200},{"d":"2026-06-08","c":24000},{"d":"2026-06-09","c":23900},{"d":"2026-06-10","c":23790},{"d":"2026-06-11","c":23970},{"d":"2026-06-12","c":24130},{"d":"2026-06-15","c":24130},{"d":"2026-06-16","c":23800},{"d":"2026-06-17","c":23850},{"d":"2026-06-18","c":23870},{"d":"2026-06-22","c":23870},{"d":"2026-06-23","c":23800},{"d":"2026-06-24","c":23470},{"d":"2026-06-25","c":22840},{"d":"2026-06-26","c":22870},{"d":"2026-06-29","c":22930},{"d":"2026-06-30","c":22500},{"d":"2026-07-01","c":22260},{"d":"2026-07-02","c":22530},{"d":"2026-07-03","c":22760},{"d":"2026-07-06","c":22830},{"d":"2026-07-07","c":22940},{"d":"2026-07-08","c":23030},{"d":"2026-07-09","c":22950},{"d":"2026-07-10","c":23120},{"d":"2026-07-13","c":22990},{"d":"2026-07-14","c":23260},{"d":"2026-07-15","c":23170},{"d":"2026-07-16","c":23160},{"d":"2026-07-17","c":23220},{"d":"2026-07-20","c":23190},{"d":"2026-07-21","c":23090},{"d":"2026-07-22","c":23170},{"d":"2026-07-23","c":23250},{"d":"2026-07-24","c":23190},{"d":"2026-07-27","c":23200},{"d":"2026-07-28","c":23200},{"d":"2026-07-29","c":23390},{"d":"2026-07-30","c":23630},{"d":"2026-07-31","c":23630},{"d":"2026-08-03","c":23490},{"d":"2026-08-04","c":23730},{"d":"2026-08-05","c":23690},{"d":"2026-08-06","c":23790},{"d":"2026-08-07","c":23970},{"d":"2026-08-10","c":23980},{"d":"2026-08-11","c":24100},{"d":"2026-08-12","c":24360},{"d":"2026-08-13","c":24110},{"d":"2026-08-14","c":23870},{"d":"2026-08-17","c":24080},{"d":"2026-08-18","c":23890},{"d":"2026-08-19","c":23670},{"d":"2026-08-20","c":23590},{"d":"2026-08-21","c":23670},{"d":"2026-08-24","c":23800},{"d":"2026-08-25","c":23750},{"d":"2026-08-26","c":23860},{"d":"2026-08-27","c":23920},{"d":"2026-08-28","c":23920},{"d":"2026-08-31","c":23960},{"d":"2026-09-01","c":24110},{"d":"2026-09-02","c":24080},{"d":"2026-09-03","c":24340},{"d":"2026-09-04","c":24360},{"d":"2026-09-07","c":24410},{"d":"2026-09-08","c":24450},{"d":"2026-09-09","c":24550},{"d":"2026-09-10","c":24560},{"d":"2026-09-11","c":24240},{"d":"2026-09-14","c":24080},{"d":"2026-09-15","c":24130},{"d":"2026-09-16","c":24160},{"d":"2026-09-17","c":24170},{"d":"2026-09-18","c":24370},{"d":"2026-09-21","c":24320},{"d":"2026-09-22","c":24260},{"d":"2026-09-23","c":24240},{"d":"2026-09-24","c":24240},{"d":"2026-09-28","c":24160},{"d":"2026-09-29","c":24100},{"d":"2026-09-30","c":24030},{"d":"2026-10-08","c":23760},{"d":"2026-10-09","c":23650},{"d":"2026-10-12","c":23800},{"d":"2026-10-13","c":23710},{"d":"2026-10-14","c":23640},{"d":"2026-10-15","c":23260},{"d":"2026-10-16","c":23440},{"d":"2026-10-19","c":23650},{"d":"2026-10-20","c":23520},{"d":"2026-10-21","c":23610},{"d":"2026-10-22","c":23700},{"d":"2026-10-23","c":23690},{"d":"2026-10-26","c":23960},{"d":"2026-10-27","c":23900},{"d":"2026-10-28","c":23920},{"d":"2026-10-29","c":23750},{"d":"2026-10-30","c":23770},{"d":"2026-11-02","c":23530},{"d":"2026-11-03","c":23440},{"d":"2026-11-04","c":23350},{"d":"2026-11-05","c":23370},{"d":"2026-11-06","c":23340},{"d":"2026-11-09","c":23520},{"d":"2026-11-10","c":23300},{"d":"2026-11-11","c":22700},{"d":"2026-11-12","c":23110},{"d":"2026-11-13","c":23070}];
-const SIGNAL={"lamp":"green","price":23070,"change":-0.015784982935153624,"highNew":false,"reason":"4周涨幅 -1.58%，低于 +3.00% 阈值","changeNote":"","fetchFailed":false,"updatedAt":"2026-11-16 09:20:12"};
+const DATA=[{"d":"2025-11-18","c":21450},{"d":"2025-11-19","c":21540},{"d":"2025-11-20","c":21560},{"d":"2025-11-21","c":21390},{"d":"2025-11-24","c":21360},{"d":"2025-11-25","c":21430},{"d":"2025-11-26","c":21410},{"d":"2025-11-27","c":21460},{"d":"2025-11-28","c":21440},{"d":"2025-12-01","c":21730},{"d":"2025-12-02","c":21730},{"d":"2025-12-03","c":21790},{"d":"2025-12-04","c":22010},{"d":"2025-12-05","c":22080},{"d":"2025-12-08","c":21920},{"d":"2025-12-09","c":21900},{"d":"2025-12-10","c":21770},{"d":"2025-12-11","c":21880},{"d":"2025-12-12","c":22050},{"d":"2025-12-15","c":21700},{"d":"2025-12-16","c":21640},{"d":"2025-12-17","c":21750},{"d":"2025-12-18","c":21750},{"d":"2025-12-19","c":21810},{"d":"2025-12-22","c":21930},{"d":"2025-12-23","c":21890},{"d":"2025-12-24","c":22020},{"d":"2025-12-25","c":21990},{"d":"2025-12-26","c":22010},{"d":"2025-12-29","c":22470},{"d":"2025-12-30","c":22180},{"d":"2025-12-31","c":22460},{"d":"2026-01-05","c":23300},{"d":"2026-01-06","c":23890},{"d":"2026-01-07","c":24110},{"d":"2026-01-08","c":24000},{"d":"2026-01-09","c":24000},{"d":"2026-01-12","c":24340},{"d":"2026-01-13","c":24320},{"d":"2026-01-14","c":24660},{"d":"2026-01-15","c":24180},{"d":"2026-01-16","c":24010},{"d":"2026-01-19","c":23860},{"d":"2026-01-20","c":23670},{"d":"2026-01-21","c":23690},{"d":"2026-01-22","c":23750},{"d":"2026-01-23","c":24110},{"d":"2026-01-26","c":24040},{"d":"2026-01-27","c":23870},{"d":"2026-01-28","c":24250},{"d":"2026-01-29","c":24850},{"d":"2026-01-30","c":24670},{"d":"2026-02-02","c":23700},{"d":"2026-02-03","c":23300},{"d":"2026-02-04","c":23760},{"d":"2026-02-05","c":23330},{"d":"2026-02-06","c":23140},{"d":"2026-02-09","c":23390},{"d":"2026-02-10","c":23290},{"d":"2026-02-11","c":23250},{"d":"2026-02-12","c":23350},{"d":"2026-02-13","c":23160},{"d":"2026-02-24","c":23400},{"d":"2026-02-25","c":23380},{"d":"2026-02-26","c":23530},{"d":"2026-02-27","c":23400},{"d":"2026-03-02","c":23620},{"d":"2026-03-03","c":23940},{"d":"2026-03-04","c":24380},{"d":"2026-03-05","c":25100},{"d":"2026-03-06","c":24450},{"d":"2026-03-09","c":25250},{"d":"2026-03-10","c":24450},{"d":"2026-03-11","c":25020},{"d":"2026-03-12","c":25240},{"d":"2026-03-13","c":25110},{"d":"2026-03-16","c":24780},{"d":"2026-03-17","c":24900},{"d":"2026-03-18","c":24500},{"d":"2026-03-19","c":24470},{"d":"2026-03-20","c":24080},{"d":"2026-03-23","c":23440},{"d":"2026-03-24","c":23450},{"d":"2026-03-25","c":23760},{"d":"2026-03-26","c":23510},{"d":"2026-03-27","c":23820},{"d":"2026-03-30","c":24520},{"d":"2026-03-31","c":24600},{"d":"2026-04-01","c":24600},{"d":"2026-04-02","c":24620},{"d":"2026-04-03","c":24510},{"d":"2026-04-07","c":24470},{"d":"2026-04-08","c":24550},{"d":"2026-04-09","c":24410},{"d":"2026-04-10","c":24530},{"d":"2026-04-13","c":24450},{"d":"2026-04-14","c":24740},{"d":"2026-04-15","c":24740},{"d":"2026-04-16","c":25080},{"d":"2026-04-17","c":25140},{"d":"2026-04-20","c":24910},{"d":"2026-04-21","c":24660},{"d":"2026-04-22","c":24770},{"d":"2026-04-23","c":24780},{"d":"2026-04-24","c":24760},{"d":"2026-04-27","c":24800},{"d":"2026-04-28","c":24460},{"d":"2026-04-29","c":24460},{"d":"2026-04-30","c":24390},{"d":"2026-05-06","c":24520},{"d":"2026-05-07","c":24040},{"d":"2026-05-08","c":24220},{"d":"2026-05-11","c":24380},{"d":"2026-05-12","c":24380},{"d":"2026-05-13","c":24550},{"d":"2026-05-14","c":24610},{"d":"2026-05-15","c":24360},{"d":"2026-05-18","c":24050},{"d":"2026-05-19","c":24200},{"d":"2026-05-20","c":24260},{"d":"2026-05-21","c":24380},{"d":"2026-05-22","c":24350},{"d":"2026-05-25","c":24300},{"d":"2026-05-26","c":24080},{"d":"2026-05-27","c":24380},{"d":"2026-05-28","c":24140},{"d":"2026-05-29","c":24210},{"d":"2026-06-01","c":24180},{"d":"2026-06-02","c":24330},{"d":"2026-06-03","c":24450},{"d":"2026-06-04","c":24210},{"d":"2026-06-05","c":24200},{"d":"2026-06-08","c":24000},{"d":"2026-06-09","c":23900},{"d":"2026-06-10","c":23790},{"d":"2026-06-11","c":23970},{"d":"2026-06-12","c":24130},{"d":"2026-06-15","c":24130},{"d":"2026-06-16","c":23800},{"d":"2026-06-17","c":23850},{"d":"2026-06-18","c":23870},{"d":"2026-06-22","c":23870},{"d":"2026-06-23","c":23800},{"d":"2026-06-24","c":23470},{"d":"2026-06-25","c":22840},{"d":"2026-06-26","c":22870},{"d":"2026-06-29","c":22930},{"d":"2026-06-30","c":22500},{"d":"2026-07-01","c":22260},{"d":"2026-07-02","c":22530},{"d":"2026-07-03","c":22760},{"d":"2026-07-06","c":22830},{"d":"2026-07-07","c":22940},{"d":"2026-07-08","c":23030},{"d":"2026-07-09","c":22950},{"d":"2026-07-10","c":23120},{"d":"2026-07-13","c":22990},{"d":"2026-07-14","c":23260},{"d":"2026-07-15","c":23170},{"d":"2026-07-16","c":23160},{"d":"2026-07-17","c":23220},{"d":"2026-07-20","c":23190},{"d":"2026-07-21","c":23090},{"d":"2026-07-22","c":23170},{"d":"2026-07-23","c":23250},{"d":"2026-07-24","c":23190},{"d":"2026-07-27","c":23200},{"d":"2026-07-28","c":23200},{"d":"2026-07-29","c":23390},{"d":"2026-07-30","c":23630},{"d":"2026-07-31","c":23630},{"d":"2026-08-03","c":23490},{"d":"2026-08-04","c":23730},{"d":"2026-08-05","c":23690},{"d":"2026-08-06","c":23790},{"d":"2026-08-07","c":23970},{"d":"2026-08-10","c":23980},{"d":"2026-08-11","c":24100},{"d":"2026-08-12","c":24360},{"d":"2026-08-13","c":24110},{"d":"2026-08-14","c":23870},{"d":"2026-08-17","c":24080},{"d":"2026-08-18","c":23890},{"d":"2026-08-19","c":23670},{"d":"2026-08-20","c":23590},{"d":"2026-08-21","c":23670},{"d":"2026-08-24","c":23800},{"d":"2026-08-25","c":23750},{"d":"2026-08-26","c":23860},{"d":"2026-08-27","c":23920},{"d":"2026-08-28","c":23920},{"d":"2026-08-31","c":23960},{"d":"2026-09-01","c":24110},{"d":"2026-09-02","c":24080},{"d":"2026-09-03","c":24340},{"d":"2026-09-04","c":24360},{"d":"2026-09-07","c":24410},{"d":"2026-09-08","c":24450},{"d":"2026-09-09","c":24550},{"d":"2026-09-10","c":24560},{"d":"2026-09-11","c":24240},{"d":"2026-09-14","c":24080},{"d":"2026-09-15","c":24130},{"d":"2026-09-16","c":24160},{"d":"2026-09-17","c":24170},{"d":"2026-09-18","c":24370},{"d":"2026-09-21","c":24320},{"d":"2026-09-22","c":24260},{"d":"2026-09-23","c":24240},{"d":"2026-09-24","c":24240},{"d":"2026-09-28","c":24160},{"d":"2026-09-29","c":24100},{"d":"2026-09-30","c":24030},{"d":"2026-10-08","c":23760},{"d":"2026-10-09","c":23650},{"d":"2026-10-12","c":23800},{"d":"2026-10-13","c":23710},{"d":"2026-10-14","c":23640},{"d":"2026-10-15","c":23260},{"d":"2026-10-16","c":23440},{"d":"2026-10-19","c":23650},{"d":"2026-10-20","c":23520},{"d":"2026-10-21","c":23610},{"d":"2026-10-22","c":23700},{"d":"2026-10-23","c":23690},{"d":"2026-10-26","c":23960},{"d":"2026-10-27","c":23900},{"d":"2026-10-28","c":23920},{"d":"2026-10-29","c":23750},{"d":"2026-10-30","c":23770},{"d":"2026-11-02","c":23530},{"d":"2026-11-03","c":23440},{"d":"2026-11-04","c":23350},{"d":"2026-11-05","c":23370},{"d":"2026-11-06","c":23340},{"d":"2026-11-09","c":23520},{"d":"2026-11-10","c":23300},{"d":"2026-11-11","c":22700},{"d":"2026-11-12","c":23110},{"d":"2026-11-13","c":23070},{"d":"2026-11-16","c":22970}];
+const SIGNAL={"lamp":"green","price":22970,"change":-0.028752642706131093,"highNew":false,"reason":"4周涨幅 -2.88%，低于 +3.00% 阈值","changeNote":"","fetchFailed":false,"updatedAt":"2026-11-16 14:57:44"};
 // ─── 金价数据嵌入（静态：deploy-al.py 每日仅重写 DATA/SIGNAL/updated 三行动态区，不触碰 GOLD_*）───
 const GOLD_DATA = [];
 const GOLD_SIGNAL = null;
@@ -328,7 +328,6 @@ function renderMetrics(){
 
 // ─── 走势图 ──────────────────────────────────────────────────────────────────────
 let currentRange='year'; // 默认近一年(约243交易日)；初始化不调 updateRangeBtns，按钮组 .active 与下拉框 selected 以 HTML 静态标记同步
-let dragState=null;
 let lastChartW=null,chartResizeTimer=null; // 手机端绘图实际宽度缓存，用于 resize 重绘判定
 let hiddenProjects=new Set();
 
@@ -360,43 +359,43 @@ function bindChartEvents(svg,tooltip,wrap,slice,PAD_L,PAD_T,PAD_R,cw,ch,W,H,yTar
   const _axis=computeYAxis(slice,yTarget); // 与 buildChartSVG 共享同一 computeYAxis（yTarget 由调用点以同一 isMobileUI 分支求值）：yMin/yMax/yRange 完全同源，hoverDot 必与曲线同式
   const yScale=v=>PAD_T+(1-(v-_axis.yMin)/_axis.yRange)*ch;
 
-  function getIdx(e){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;return Math.round((mx-PAD_L)/cw*(slice.length-1));}
+  let pinnedIdx=null,clickTimer=null,suppressClick=false; // pinnedIdx=点击/点按选中并固定的数据点；suppressClick 防移动端 touch 后再触发 click 造成二次 toggle
+  function clientX(e){if(e.touches&&e.touches.length)return e.touches[0].clientX;if(e.changedTouches&&e.changedTouches.length)return e.changedTouches[0].clientX;return e.clientX;}
+  function idxFromEvent(e){const rect=svg.getBoundingClientRect();const mx=(clientX(e)-rect.left)/rect.width*W;const idx=Math.round((mx-PAD_L)/cw*(slice.length-1));return Math.max(0,Math.min(slice.length-1,idx));}
 
-  function showTip(e,idx){
-    if(idx<0||idx>=slice.length){tooltip.style.opacity='0';return;}
+  function draw(idx,pinned){
+    if(idx<0||idx>=slice.length){clear();return;}
     const d=slice[idx];
     const gi=DATA.findIndex(p=>p.d===d.d);
     let ca='—',cp='—',cc='tt-flat';
     if(gi>0){const prev=DATA[gi-1].c;const diff=d.c-prev;const pv=diff/prev*100;const s=diff>0?'+':'';ca=s+diff.toFixed(0)+' 元';cp=s+pv.toFixed(2)+'%';cc=diff>0?'tt-up':diff<0?'tt-down':'tt-flat';}
     tooltip.innerHTML='<div class="tt-date">'+d.d+'</div><div class="tt-price">均价：'+d.c.toLocaleString()+' 元/吨</div><div class="tt-change '+cc+'">日涨跌：'+ca+' | '+cp+'</div>';
+    tooltip.classList.toggle('pinned',!!pinned);
     tooltip.style.opacity='1';
-    const wr=wrap.getBoundingClientRect();let tx=e.clientX-wr.left+14,ty=e.clientY-wr.top-40;const tw=tooltip.offsetWidth,th=tooltip.offsetHeight;if(tx+tw>wr.width)tx=e.clientX-wr.left-tw-14;if(ty<0)ty=4;if(ty+th>wr.height)ty=wr.height-th-4;
+    const rect=svg.getBoundingClientRect(),wr=wrap.getBoundingClientRect();
+    const px=xScale(idx)/W*rect.width+(rect.left-wr.left),py=yScale(d.c)/H*rect.height+(rect.top-wr.top);
+    const tw=tooltip.offsetWidth,th=tooltip.offsetHeight;
+    let tx=px+14,ty=py-th-14;
+    if(tx+tw>wr.width)tx=px-tw-14;if(tx<0)tx=4;
+    if(ty<0)ty=py+18;if(ty+th>wr.height)ty=Math.max(4,wr.height-th-4);
     tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';
-    const hl=svg.querySelector('#hoverLine'),hd=svg.querySelector('#hoverDot');
-    if(hl){hl.setAttribute('x1',xScale(idx));hl.setAttribute('x2',xScale(idx));hl.style.display='';}
-    if(hd){hd.setAttribute('cx',xScale(idx));hd.setAttribute('cy',yScale(d.c));hd.style.display='';}
+    const x=xScale(idx),y=yScale(d.c);
+    const hl=svg.querySelector('#hoverLine'),hh=svg.querySelector('#hoverHalo'),hd=svg.querySelector('#hoverDot');
+    if(hl){hl.setAttribute('x1',x);hl.setAttribute('x2',x);hl.setAttribute('stroke','#3b82f6');hl.setAttribute('stroke-opacity',pinned?'0.5':'0.3');hl.style.display='';}
+    if(hh){hh.setAttribute('cx',x);hh.setAttribute('cy',y);hh.setAttribute('r',pinned?11:8);hh.setAttribute('fill-opacity',pinned?'0.22':'0.13');hh.style.display='';}
+    if(hd){hd.setAttribute('cx',x);hd.setAttribute('cy',y);hd.setAttribute('r',pinned?5.5:4.5);hd.style.display='';}
   }
-  function hideTip(){tooltip.style.opacity='0';const hl=svg.querySelector('#hoverLine'),hd=svg.querySelector('#hoverDot');if(hl)hl.style.display='none';if(hd)hd.style.display='none';}
+  function clear(){tooltip.style.opacity='0';tooltip.classList.remove('pinned');const hl=svg.querySelector('#hoverLine'),hh=svg.querySelector('#hoverHalo'),hd=svg.querySelector('#hoverDot');if(hl)hl.style.display='none';if(hh)hh.style.display='none';if(hd)hd.style.display='none';}
 
-  svg.addEventListener('mousedown',e=>{if(e.button!==0)return;const idx=getIdx(e);if(idx<0||idx>=slice.length)return;const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;dragState={startX:mx,active:false};});
-
-  svg.addEventListener('mousemove',e=>{
-    if(dragState){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;const cx=Math.max(PAD_L,Math.min(W-PAD_R,mx));if(!dragState.active&&Math.abs(cx-dragState.startX)>5){dragState.active=true;hideTip();}if(dragState.active){const sr=svg.querySelector('#dragSelRect');const x1=Math.min(dragState.startX,cx),x2=Math.max(dragState.startX,cx);sr.setAttribute('x',x1);sr.setAttribute('width',x2-x1);sr.style.display='';}return;}
-    showTip(e,getIdx(e));
-  });
-
-  svg.addEventListener('mouseup',e=>{
-    if(dragState&&dragState.active){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;const ex=Math.max(PAD_L,Math.min(W-PAD_R,mx));const x1=Math.min(dragState.startX,ex),x2=Math.max(dragState.startX,ex);let i1=Math.round((x1-PAD_L)/cw*(slice.length-1)),i2=Math.round((x2-PAD_L)/cw*(slice.length-1));i1=Math.max(0,i1);i2=Math.min(slice.length-1,i2);if(i2-i1>=2){const sg=DATA.findIndex(p=>p.d===slice[i1].d),eg=DATA.findIndex(p=>p.d===slice[i2].d);if(sg>=0&&eg>=0){renderChartWithSlice(DATA.slice(sg,eg+1));return;}}dragState=null;const sr=svg.querySelector('#dragSelRect');if(sr)sr.style.display='none';}
-  });
-
-  svg.addEventListener('mouseleave',()=>{if(!dragState)hideTip();});
-  svg.addEventListener('dblclick',e=>{e.preventDefault();currentRange='all';updateRangeBtns('all');renderChart();});
-
-  svg.addEventListener('click',e=>{
-    if(dragState&&dragState.active){dragState=null;return;}
-    const idx=getIdx(e);if(idx<0||idx>=slice.length)return;
-    showTip(e,idx); // 只读模式：桌面/手机端统一，单击展示该日期价格提示，"设为项目开标日"标注写入链路已关闭
-  });
+  // 桌面：悬停即时高亮并跟随光标；离开时若有选中点则回到选中点，否则清除
+  svg.addEventListener('mousemove',e=>{if(suppressClick)return;const idx=idxFromEvent(e);draw(idx,pinnedIdx!=null&&idx===pinnedIdx);});
+  svg.addEventListener('mouseleave',()=>{if(pinnedIdx!=null)draw(pinnedIdx,true);else clear();});
+  // 点击：选中并固定该数据点；再次点击同一点取消选中（移动端由 touch 处理，click 被 suppressClick 屏蔽）
+  svg.addEventListener('click',e=>{if(suppressClick)return;const idx=idxFromEvent(e);if(pinnedIdx===idx){pinnedIdx=null;clear();return;}pinnedIdx=idx;draw(idx,true);});
+  // 移动端：手指点按/横向滑动即时反馈；touch-action:pan-y 保留纵向滚动，touch 后短暂屏蔽 click 防二次 toggle
+  svg.addEventListener('touchstart',e=>{suppressClick=true;clearTimeout(clickTimer);clickTimer=setTimeout(()=>{suppressClick=false;},450);pinnedIdx=idxFromEvent(e);draw(pinnedIdx,true);},{passive:true});
+  svg.addEventListener('touchmove',e=>{pinnedIdx=idxFromEvent(e);draw(pinnedIdx,true);},{passive:true});
+  svg.addEventListener('touchend',()=>{if(pinnedIdx!=null)draw(pinnedIdx,true);},{passive:true});
 }
 
 const colors=['#e5484d','#f5a524','#3b82f6','#30a46c','#8b5cf6','#ec4899'];
@@ -457,13 +456,13 @@ function buildChartSVG(slice,projects){
     }
   });
   const defs='<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3b82f6" stop-opacity="0.15"/><stop offset="100%" stop-color="#3b82f6" stop-opacity="0.01"/></linearGradient></defs>';
-  const dragRect='<rect id="dragSelRect" class="drag-sel" x="0" y="'+PAD_T+'" width="0" height="'+ch+'" style="display:none"/>';
-  const hoverLine='<line id="hoverLine" x1="0" y1="'+PAD_T+'" x2="0" y2="'+(PAD_T+ch)+'" stroke="#6e7781" stroke-width="1" stroke-dasharray="3,3" style="display:none"/>';
-  const hoverDot='<circle id="hoverDot" cx="0" cy="0" r="4" fill="#3b82f6" stroke="#fff" stroke-width="2" style="display:none"/>';
+  const hoverLine='<line id="hoverLine" x1="0" y1="'+PAD_T+'" x2="0" y2="'+(PAD_T+ch)+'" stroke="#3b82f6" stroke-width="1" stroke-dasharray="3,3" style="display:none"/>';
+  const hoverHalo='<circle id="hoverHalo" cx="0" cy="0" r="8" fill="#3b82f6" fill-opacity="0.13" style="display:none"/>';
+  const hoverDot='<circle id="hoverDot" cx="0" cy="0" r="4.5" fill="#3b82f6" stroke="#fff" stroke-width="2" style="display:none"/>';
   let hotspots='';slice.forEach((d,i)=>{const x=xScale(i);const w=cw/slice.length;hotspots+='<rect x="'+(x-w/2)+'" y="'+PAD_T+'" width="'+w+'" height="'+ch+'" fill="transparent" data-idx="'+i+'"/>';});
   const svgEl=$('#chartSvg');
   svgEl.setAttribute('viewBox','0 0 '+W+' '+H); // 手机端 1:1；桌面端与 HTML 初始属性 0 0 1000 260 相同
-  svgEl.innerHTML=defs+gridHtml+'<path d="'+areaPath+'" fill="url(#areaGrad)"/><path d="'+linePath+'" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>'+projMarks+hoverLine+hoverDot+dragRect+hotspots;
+  svgEl.innerHTML=defs+gridHtml+'<path d="'+areaPath+'" fill="url(#areaGrad)"/><path d="'+linePath+'" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round"/>'+projMarks+hoverLine+hoverHalo+hoverDot+hotspots;
   return {W,H,PAD_L,PAD_R,PAD_T,cw,ch,xScale,yScale};
 }
 
@@ -475,13 +474,7 @@ function renderChart(){
   bindChartEvents(svg,tooltip,wrap,slice,dim.PAD_L,dim.PAD_T,dim.PAD_R,dim.cw,dim.ch,dim.W,dim.H,isMobileUI()?4:5); // yTarget 与 buildChartSVG 内 mobile?4:5 同一判定同源
 }
 
-function renderChartWithSlice(zoomSlice){
-  const svg=$('#chartSvg');const tooltip=$('#tooltip');const wrap=$('#chartWrap');
-  const projects=loadProjects();const slice=zoomSlice;
-  if(slice.length<2)return;
-  const dim=buildChartSVG(slice,projects);
-  bindChartEvents(svg,tooltip,wrap,slice,dim.PAD_L,dim.PAD_T,dim.PAD_R,dim.cw,dim.ch,dim.W,dim.H,isMobileUI()?4:5); // 拖拽缩放路径同样传参，保持同源
-}
+// （拖拽选择区间功能已移除：铝价走势图仅保留悬停/点按查看数据点；区间切换统一由上方档位按钮/下拉控制）
 
 // 手机端：窗口尺寸变化/旋转后用新宽度重绘（防抖 150ms，变化>8px 才重绘）；桌面端 W 恒为 1000 不触发
 window.addEventListener('resize',()=>{
@@ -592,7 +585,7 @@ function renderAll(){
 let goldCurrentRange='year'; // 初始化不调 updateGoldRangeBtns，按钮组 .active 与下拉框 selected 以 HTML 静态标记同步
 let goldRendered=false;      // 首次切到金价 Tab 时才渲染（隐藏面板 clientWidth=0，手机端 1:1 宽度测量须在可见后）
 let goldLastChartW=null;
-let goldResizeTimer=null;    // 金价 resize 防抖计时器（拖拽缩放状态统一走铝价的共享 dragState，两面板从不同时可见，互不冲突）
+let goldResizeTimer=null;    // 金价 resize 防抖计时器
 
 // ─── 金价信号横幅 ───
 function renderGoldSignal(){
@@ -660,37 +653,41 @@ function bindGoldChartEvents(svg,tooltip,wrap,slice,PAD_L,PAD_T,PAD_R,cw,ch,W,H,
   const xScale=i=>PAD_L+i/(slice.length-1)*cw;
   const _axis=computeGoldYAxis(slice,yTarget);
   const yScale=v=>PAD_T+(1-(v-_axis.yMin)/_axis.yRange)*ch;
-  function getIdx(e){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;return Math.round((mx-PAD_L)/cw*(slice.length-1));}
-  function showTip(e,idx){
-    if(idx<0||idx>=slice.length){tooltip.style.opacity='0';return;}
+  let pinnedIdx=null,clickTimer=null,suppressClick=false; // pinnedIdx=点击/点按选中并固定的数据点；suppressClick 防移动端 touch 后再触发 click 造成二次 toggle
+  function clientX(e){if(e.touches&&e.touches.length)return e.touches[0].clientX;if(e.changedTouches&&e.changedTouches.length)return e.changedTouches[0].clientX;return e.clientX;}
+  function idxFromEvent(e){const rect=svg.getBoundingClientRect();const mx=(clientX(e)-rect.left)/rect.width*W;const idx=Math.round((mx-PAD_L)/cw*(slice.length-1));return Math.max(0,Math.min(slice.length-1,idx));}
+  function draw(idx,pinned){
+    if(idx<0||idx>=slice.length){clear();return;}
     const d=slice[idx];
     const gi=GOLD_DATA.findIndex(p=>p.d===d.d);
     let ca='—',cp='—',cc='tt-flat';
     if(gi>0){const prev=GOLD_DATA[gi-1].c;const diff=d.c-prev;const pv=diff/prev*100;const s=diff>0?'+':'';ca=s+diff.toFixed(2)+' 元';cp=s+pv.toFixed(2)+'%';cc=diff>0?'tt-up':diff<0?'tt-down':'tt-flat';}
     tooltip.innerHTML='<div class="tt-date">'+d.d+'</div><div class="tt-price">收盘价：'+d.c.toLocaleString()+' 元/克</div><div class="tt-change '+cc+'">日涨跌：'+ca+' | '+cp+'</div>';
+    tooltip.classList.toggle('pinned',!!pinned);
     tooltip.style.opacity='1';
-    const wr=wrap.getBoundingClientRect();let tx=e.clientX-wr.left+14,ty=e.clientY-wr.top-40;const tw=tooltip.offsetWidth,th=tooltip.offsetHeight;if(tx+tw>wr.width)tx=e.clientX-wr.left-tw-14;if(ty<0)ty=4;if(ty+th>wr.height)ty=wr.height-th-4;
+    const rect=svg.getBoundingClientRect(),wr=wrap.getBoundingClientRect();
+    const px=xScale(idx)/W*rect.width+(rect.left-wr.left),py=yScale(d.c)/H*rect.height+(rect.top-wr.top);
+    const tw=tooltip.offsetWidth,th=tooltip.offsetHeight;
+    let tx=px+14,ty=py-th-14;
+    if(tx+tw>wr.width)tx=px-tw-14;if(tx<0)tx=4;
+    if(ty<0)ty=py+18;if(ty+th>wr.height)ty=Math.max(4,wr.height-th-4);
     tooltip.style.left=tx+'px';tooltip.style.top=ty+'px';
-    const hl=svg.querySelector('#hoverLine'),hd=svg.querySelector('#hoverDot');
-    if(hl){hl.setAttribute('x1',xScale(idx));hl.setAttribute('x2',xScale(idx));hl.style.display='';}
-    if(hd){hd.setAttribute('cx',xScale(idx));hd.setAttribute('cy',yScale(d.c));hd.style.display='';}
+    const x=xScale(idx),y=yScale(d.c);
+    const hl=svg.querySelector('#hoverLine'),hh=svg.querySelector('#hoverHalo'),hd=svg.querySelector('#hoverDot');
+    if(hl){hl.setAttribute('x1',x);hl.setAttribute('x2',x);hl.setAttribute('stroke','#f5a524');hl.setAttribute('stroke-opacity',pinned?'0.55':'0.35');hl.style.display='';}
+    if(hh){hh.setAttribute('cx',x);hh.setAttribute('cy',y);hh.setAttribute('r',pinned?11:8);hh.setAttribute('fill-opacity',pinned?'0.24':'0.14');hh.style.display='';}
+    if(hd){hd.setAttribute('cx',x);hd.setAttribute('cy',y);hd.setAttribute('r',pinned?5.5:4.5);hd.style.display='';}
   }
-  function hideTip(){tooltip.style.opacity='0';const hl=svg.querySelector('#hoverLine'),hd=svg.querySelector('#hoverDot');if(hl)hl.style.display='none';if(hd)hd.style.display='none';}
-  svg.addEventListener('mousedown',e=>{if(e.button!==0)return;const idx=getIdx(e);if(idx<0||idx>=slice.length)return;const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;dragState={startX:mx,active:false};});
-  svg.addEventListener('mousemove',e=>{
-    if(dragState){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;const cx=Math.max(PAD_L,Math.min(W-PAD_R,mx));if(!dragState.active&&Math.abs(cx-dragState.startX)>5){dragState.active=true;hideTip();}if(dragState.active){const sr=svg.querySelector('#dragSelRect');const x1=Math.min(dragState.startX,cx),x2=Math.max(dragState.startX,cx);sr.setAttribute('x',x1);sr.setAttribute('width',x2-x1);sr.style.display='';}return;}
-    showTip(e,getIdx(e));
-  });
-  svg.addEventListener('mouseup',e=>{
-    if(dragState&&dragState.active){const rect=svg.getBoundingClientRect();const mx=(e.clientX-rect.left)/rect.width*W;const ex=Math.max(PAD_L,Math.min(W-PAD_R,mx));const x1=Math.min(dragState.startX,ex),x2=Math.max(dragState.startX,ex);let i1=Math.round((x1-PAD_L)/cw*(slice.length-1)),i2=Math.round((x2-PAD_L)/cw*(slice.length-1));i1=Math.max(0,i1);i2=Math.min(slice.length-1,i2);if(i2-i1>=2){const sg=GOLD_DATA.findIndex(p=>p.d===slice[i1].d),eg=GOLD_DATA.findIndex(p=>p.d===slice[i2].d);if(sg>=0&&eg>=0){renderGoldChartWithSlice(GOLD_DATA.slice(sg,eg+1));return;}}dragState=null;const sr=svg.querySelector('#dragSelRect');if(sr)sr.style.display='none';}
-  });
-  svg.addEventListener('mouseleave',()=>{if(!dragState)hideTip();});
-  svg.addEventListener('dblclick',e=>{e.preventDefault();goldCurrentRange='all';updateGoldRangeBtns('all');renderGoldChart();});
-  svg.addEventListener('click',e=>{
-    if(dragState&&dragState.active){dragState=null;return;}
-    const idx=getIdx(e);if(idx<0||idx>=slice.length)return;
-    showTip(e,idx); // 只读模式：与铝价口径一致
-  });
+  function clear(){tooltip.style.opacity='0';tooltip.classList.remove('pinned');const hl=svg.querySelector('#hoverLine'),hh=svg.querySelector('#hoverHalo'),hd=svg.querySelector('#hoverDot');if(hl)hl.style.display='none';if(hh)hh.style.display='none';if(hd)hd.style.display='none';}
+  // 桌面：悬停即时高亮并跟随光标；离开时若有选中点则回到选中点，否则清除
+  svg.addEventListener('mousemove',e=>{if(suppressClick)return;const idx=idxFromEvent(e);draw(idx,pinnedIdx!=null&&idx===pinnedIdx);});
+  svg.addEventListener('mouseleave',()=>{if(pinnedIdx!=null)draw(pinnedIdx,true);else clear();});
+  // 点击：选中并固定该数据点；再次点击同一点取消选中（移动端由 touch 处理，click 被 suppressClick 屏蔽）
+  svg.addEventListener('click',e=>{if(suppressClick)return;const idx=idxFromEvent(e);if(pinnedIdx===idx){pinnedIdx=null;clear();return;}pinnedIdx=idx;draw(idx,true);});
+  // 移动端：手指点按/横向滑动即时反馈；touch-action:pan-y 保留纵向滚动，touch 后短暂屏蔽 click 防二次 toggle
+  svg.addEventListener('touchstart',e=>{suppressClick=true;clearTimeout(clickTimer);clickTimer=setTimeout(()=>{suppressClick=false;},450);pinnedIdx=idxFromEvent(e);draw(pinnedIdx,true);},{passive:true});
+  svg.addEventListener('touchmove',e=>{pinnedIdx=idxFromEvent(e);draw(pinnedIdx,true);},{passive:true});
+  svg.addEventListener('touchend',()=>{if(pinnedIdx!=null)draw(pinnedIdx,true);},{passive:true});
 }
 
 // ─── 金价图表构建：无项目标记/图例（金价项目表暂空），其余结构与铝价一致；线色/hoverDot/areaGrad 用 #f5a524 ───
@@ -716,13 +713,13 @@ function buildGoldChartSVG(slice){
   const xTickCount=Math.min(mobile?Math.max(2,Math.floor(cw/50)+1):6,slice.length);
   for(let i=0;i<xTickCount;i++){const idx=Math.round(i*(slice.length-1)/(xTickCount-1));const x=xScale(idx);gridHtml+='<text x="'+x+'" y="'+(H-6)+'" text-anchor="middle" fill="#6e7781" font-size="11">'+slice[idx].d.slice(5)+'</text>';}
   const defs='<defs><linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f5a524" stop-opacity="0.15"/><stop offset="100%" stop-color="#f5a524" stop-opacity="0.01"/></linearGradient></defs>';
-  const dragRect='<rect id="dragSelRect" class="drag-sel" x="0" y="'+PAD_T+'" width="0" height="'+ch+'" style="display:none"/>';
-  const hoverLine='<line id="hoverLine" x1="0" y1="'+PAD_T+'" x2="0" y2="'+(PAD_T+ch)+'" stroke="#6e7781" stroke-width="1" stroke-dasharray="3,3" style="display:none"/>';
-  const hoverDot='<circle id="hoverDot" cx="0" cy="0" r="4" fill="#f5a524" stroke="#fff" stroke-width="2" style="display:none"/>';
+  const hoverLine='<line id="hoverLine" x1="0" y1="'+PAD_T+'" x2="0" y2="'+(PAD_T+ch)+'" stroke="#f5a524" stroke-width="1" stroke-dasharray="3,3" style="display:none"/>';
+  const hoverHalo='<circle id="hoverHalo" cx="0" cy="0" r="8" fill="#f5a524" fill-opacity="0.14" style="display:none"/>';
+  const hoverDot='<circle id="hoverDot" cx="0" cy="0" r="4.5" fill="#f5a524" stroke="#fff" stroke-width="2" style="display:none"/>';
   let hotspots='';slice.forEach((d,i)=>{const x=xScale(i);const w=cw/slice.length;hotspots+='<rect x="'+(x-w/2)+'" y="'+PAD_T+'" width="'+w+'" height="'+ch+'" fill="transparent" data-idx="'+i+'"/>';});
   const svgEl=$('#goldChartSvg');
   svgEl.setAttribute('viewBox','0 0 '+W+' '+H);
-  svgEl.innerHTML=defs+gridHtml+'<path d="'+areaPath+'" fill="url(#areaGrad)"/><path d="'+linePath+'" fill="none" stroke="#f5a524" stroke-width="2" stroke-linejoin="round"/>'+hoverLine+hoverDot+dragRect+hotspots;
+  svgEl.innerHTML=defs+gridHtml+'<path d="'+areaPath+'" fill="url(#areaGrad)"/><path d="'+linePath+'" fill="none" stroke="#f5a524" stroke-width="2" stroke-linejoin="round"/>'+hoverLine+hoverHalo+hoverDot+hotspots;
   return {W,H,PAD_L,PAD_R,PAD_T,cw,ch,xScale,yScale};
 }
 
@@ -734,13 +731,7 @@ function renderGoldChart(){
   bindGoldChartEvents(svg,tooltip,wrap,slice,dim.PAD_L,dim.PAD_T,dim.PAD_R,dim.cw,dim.ch,dim.W,dim.H,isMobileUI()?4:5);
 }
 
-function renderGoldChartWithSlice(zoomSlice){
-  const svg=$('#goldChartSvg');const tooltip=$('#goldTooltip');const wrap=$('#goldChartWrap');
-  const slice=zoomSlice;
-  if(slice.length<2)return;
-  const dim=buildGoldChartSVG(slice);
-  bindGoldChartEvents(svg,tooltip,wrap,slice,dim.PAD_L,dim.PAD_T,dim.PAD_R,dim.cw,dim.ch,dim.W,dim.H,isMobileUI()?4:5);
-}
+// （拖拽选择区间功能已移除：金价走势图仅保留悬停/点按查看数据点；区间切换统一由上方档位按钮/下拉控制）
 
 
 function updateGoldRangeBtns(range){const r=String(range);document.querySelectorAll('#goldRangeBtns .range-btn').forEach(b=>{b.classList.toggle('active',b.dataset.range===r);});const sel=$('#goldRangeSelect');if(sel&&sel.querySelector('option[value="'+r+'"]'))sel.value=r;} // 作用域限定金价按钮组，避免与铝价 .range-btn 全局选择器互相串扰
